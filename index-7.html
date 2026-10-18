@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kasir Catat.in</title>
+<style>
+:root{--n:#12305c;--b:#2f7de1;--bg:#f5f7fb;--l:#e1e7f0;--t:#1b2433;--m:#5d6b82;--r:#c0392b;--g:#1d8a52}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;font:16px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--t);background:var(--bg);overflow-wrap:anywhere}
+button,input,select{font:inherit}h1{font-size:1.35rem;margin:.1em 0 .5em}h2{font-size:1.05rem;margin:0}
+.top{background:var(--n);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:6px 14px;position:sticky;top:0;z-index:6;min-height:54px}
+.logo{font-weight:700;font-size:1.2rem}.logo b{color:#7db4ff}
+.hb{background:none;border:1px solid #4a6fa5;color:#fff;border-radius:8px;width:44px;height:40px;font-size:1.3rem;cursor:pointer}
+.top nav{display:none;position:absolute;top:100%;right:8px;width:min(240px,calc(100vw - 16px));flex-direction:column;background:var(--n);padding:6px;border-radius:0 0 12px 12px;box-shadow:0 8px 20px #0004}.top nav.open{display:flex}
+.top a{color:#cfe0fb;text-decoration:none;padding:10px 12px;border-radius:8px;cursor:pointer}.top a.on{background:#25508f;color:#fff}
+main{max-width:1000px;margin:0 auto;padding:16px}.card{background:#fff;border:1px solid var(--l);border-radius:14px;padding:16px;margin-bottom:14px}
+.grid{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:14px}.grid .card{margin:0;padding:14px}.stat small{color:var(--m)}.stat div{font-size:clamp(1.05rem,4.6vw,1.45rem);font-weight:700;color:var(--n)}.stat.w{grid-column:1/-1}
+.pos{display:grid;gap:14px;grid-template-columns:1fr}
+label{display:block;font-size:.9rem;color:var(--m);margin:10px 0 3px}input,select{width:100%;min-height:44px;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;background:#fff}
+input:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--b);outline-offset:1px}
+.btn{background:var(--b);color:#fff;border:0;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600}.btn.s{background:#fff;color:var(--n);border:1px solid #b9c5d8}.btn:disabled{opacity:.45;cursor:not-allowed}.sm{padding:4px 12px;min-height:36px;font-size:.88rem}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}.err{color:var(--r);font-size:.9rem;margin:6px 0;min-height:1px}.ok{color:var(--g)}.mut{color:var(--m);font-size:.9rem}
+.pl{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));max-height:42vh;overflow:auto;margin-top:10px}.pi{text-align:left;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px;cursor:pointer;min-height:76px}.pi:hover{border-color:var(--b)}
+.li{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;padding:12px 0;border-bottom:1px solid var(--l);cursor:pointer}.li:last-child{border:0}
+.ci{padding:10px 0;border-bottom:1px solid var(--l)}.ci1,.ci2{display:flex;justify-content:space-between;align-items:center;gap:8px}.ci2{margin:6px 0}.st{display:flex;gap:4px;align-items:center}.st .btn{width:40px;padding:0}.st input{width:56px;text-align:center;padding:8px 4px}
+details summary{cursor:pointer;padding:4px 0;color:var(--n);font-weight:600}.flt{padding:10px 16px;margin:10px 0}
+.tag{background:#fff3cd;color:#7a5b00;border-radius:6px;padding:2px 8px;font-size:.8rem;font-weight:600}.warn{background:#fff8e1;border:1px solid #f0d78a;border-radius:10px;padding:10px;font-size:.9rem;margin-bottom:12px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--l);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:4}.tot{font-size:1.4rem;font-weight:700;color:var(--n)}.bar .btn{min-width:120px}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{padding:8px 6px;border-bottom:1px solid var(--l);text-align:left;white-space:nowrap}th{color:var(--m)}
+.auth{max-width:420px;margin:5vh auto;padding:0 16px}.ov{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:14px;z-index:9}.md{background:#fff;border-radius:14px;padding:18px;max-width:440px;width:100%;max-height:90vh;overflow:auto}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--n);color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw}.rcpt{font-family:ui-monospace,monospace;font-size:.85rem}.rcpt hr{border:0;border-top:1px dashed #888}
+@media(min-width:800px){.hb{display:none}.top{justify-content:flex-start;gap:24px}.top nav{display:flex;position:static;flex-direction:row;width:auto;background:none;box-shadow:none;padding:0;flex:1}.top nav a:last-child{margin-left:auto}.pos{grid-template-columns:1.2fr 1fr}.grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}}
+@media print{body *{visibility:hidden}.rcpt,.rcpt *{visibility:visible}.rcpt{position:absolute;left:0;top:0;width:100%}.ov{background:none}}
+</style></head><body><div id="app"></div><div id="ov"></div>
+<script>
+const K='catatin.v1',SS='catatin.sesi',SCHEMA='1.0';
+let db=load(),cart=[],pay={m:'Tunai',paid:''},saving=false,q='',pq='',hf={q:'',a:'',b:''},ex={a:'',b:''},loading=false;
+function load(){try{const d=JSON.parse(localStorage.getItem(K));if(d&&Array.isArray(d.products)&&Array.isArray(d.txs)&&d.biz)return d}catch(e){}return null}
+function save(){localStorage.setItem(K,JSON.stringify(db))}
+const $=s=>document.getElementById(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const IDR=new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0,minimumFractionDigits:0}),rp=n=>IDR.format(n).replace(/\s/g,''),p2=n=>String(n).padStart(2,'0');
+const num=s=>Number(String(s).replace(/\D/g,''))||0,fmt=n=>n===''||n==null?'':Number(n).toLocaleString('id-ID');
+function mask(el){const pos=el.selectionStart,keep=el.value.slice(0,pos).replace(/\D/g,'').length,d=el.value.replace(/\D/g,'').slice(0,12).replace(/^0+(?=\d)/,'');el.value=d?Number(d).toLocaleString('id-ID'):'';let c=0,i=0;while(i<el.value.length&&c<keep){if(/\d/.test(el.value[i]))c++;i++}el.setSelectionRange(i,i)}
+const dstr=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()),tstr=d=>p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,8).toUpperCase();
+async function hash(s,salt){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const okEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+const demoNote='<div class="warn"><b>Mode Demo.</b> Akun dan data hanya tersimpan di browser perangkat ini. Ini bukan autentikasi produksi, dan data tidak dicadangkan secara online.</div>';
+function go(h){location.hash=h}
+window.onhashchange=render;
+function render(){
+  const v=(location.hash||'#').slice(1)||'dash',ok=sessionStorage.getItem(SS)==='1'&&db;
+  if(!ok){return v==='register'?regPage():loginPage()}
+  const nav=[['dash','Beranda'],['pos','Kasir'],['products','Produk'],['history','Riwayat'],['export','Ekspor CSV'],['profile','Profil']];
+  const pg={dash,pos,products,history,export:exportPg,profile}[v]||dash;
+  $('app').innerHTML=`<header class="top"><span class="logo">catat<b>.in</b></span><button class="hb" aria-label="Menu" aria-expanded="false" onclick="tm(this)">☰</button><nav id="nv">${nav.map(([k,t])=>`<a class="${k===v?'on':''}" onclick="gn('${k}')">${t}</a>`).join('')}<a onclick="logout()">Keluar</a></nav></header><main>${pg()}</main>`;
+  if(v==='pos')list();
+}
+function tm(b){const o=$('nv').classList.toggle('open');b.setAttribute('aria-expanded',o)}
+function gn(k){if(location.hash==='#'+k)render();else go(k)}
+function logout(){sessionStorage.removeItem(SS);cart=[];go('login')}
+/* AUTH */
+function loginPage(msg=''){$('app').innerHTML=`<div class="auth"><div class="logo" style="font-size:1.8rem;color:var(--n)">catat<b style="color:var(--b)">.in</b></div><h1>Masuk ke Kasir</h1>${demoNote}
+<div class="card"><label for="e">Email</label><input id="e" type="email" autocomplete="username"><label for="p">Kata sandi</label><div class="row" style="flex-wrap:nowrap"><input id="p" type="password" autocomplete="current-password"><button class="btn s" type="button" onclick="tg('p',this)">Lihat</button></div>
+<div class="err" id="m">${esc(msg)}</div><button class="btn" id="bt" style="width:100%" onclick="doLogin()">Masuk</button></div><p class="mut">Belum punya akun? <a href="#register">Daftar</a></p></div>`}
+function tg(i,b){const e=$(i);e.type=e.type==='password'?'text':'password';b.textContent=e.type==='password'?'Lihat':'Sembunyikan'}
+function setM(t){$('m').textContent=t}
+async function doLogin(){const e=$('e').value.trim().toLowerCase(),p=$('p').value;
+  if(!e||!p)return setM('Email dan kata sandi wajib diisi.');if(!okEmail(e))return setM('Format email belum benar.');
+  if(!db)return setM('Belum ada akun di browser ini. Silakan daftar terlebih dahulu.');
+  $('bt').disabled=true;$('bt').textContent='Memproses...';const h=await hash(p,db.user.salt);
+  if(e!==db.user.email||h!==db.user.hash){$('bt').disabled=false;$('bt').textContent='Masuk';return setM('Email atau kata sandi salah.')}
+  sessionStorage.setItem(SS,'1');go('dash');render()}
+function regPage(){$('app').innerHTML=`<div class="auth"><div class="logo" style="font-size:1.8rem;color:var(--n)">catat<b style="color:var(--b)">.in</b></div><h1>Daftar akun</h1>${demoNote}
+${db?'<div class="warn">Sudah ada akun di browser ini. Mendaftar lagi akan <b>menggantikan akun dan menghapus data lokal</b>.</div>':''}
+<div class="card"><label for="u">Nama pengguna</label><input id="u"><label for="n">Nama usaha</label><input id="n"><label for="e">Email</label><input id="e" type="email"><label for="p">Kata sandi (min. 8 karakter)</label><input id="p" type="password" autocomplete="new-password"><label for="p2">Konfirmasi kata sandi</label><input id="p2" type="password" autocomplete="new-password">
+<div class="err" id="m"></div><button class="btn" id="bt" style="width:100%" onclick="doReg()">Daftar</button></div><p class="mut">Sudah punya akun? <a href="#login">Masuk</a></p></div>`}
+async function doReg(){const u=$('u').value.trim(),n=$('n').value.trim(),e=$('e').value.trim().toLowerCase(),p=$('p').value,p2v=$('p2').value;
+  if(!u||!n||!e||!p||!p2v)return setM('Semua kolom wajib diisi.');if(!okEmail(e))return setM('Format email belum benar.');
+  if(p.length<8)return setM('Kata sandi minimal 8 karakter.');if(p!==p2v)return setM('Konfirmasi kata sandi tidak sama.');
+  if(db&&!confirm('Akun dan data lokal yang ada akan dihapus. Lanjutkan?'))return;
+  $('bt').disabled=true;$('bt').textContent='Memproses...';const salt=uid()+uid();
+  db={v:1,user:{email:e,salt,hash:await hash(p,salt)},biz:{id:'BIZ-'+uid(),name:n,owner:u,contact:'',addr:''},products:[],txs:[],seq:{}};save();
+  sessionStorage.setItem(SS,'1');go('dash');render()}
+/* DASHBOARD */
+function dash(){const t=dstr(new Date()),tx=db.txs.filter(x=>x.date===t&&!x.void),sum=tx.reduce((a,x)=>a+x.total,0),act=db.products.filter(p=>p.active).length;
+  return `<div class="row sp"><h1>Beranda</h1><button class="btn" onclick="go('pos')">Mulai transaksi</button></div><p class="mut" style="margin-top:-6px">${esc(db.biz.name)}</p>${db.products.some(p=>p.demo)?'<div class="warn"><span class="tag">Data Demo</span> Sebagian produk adalah contoh. Ubah atau nonaktifkan di halaman Produk.</div>':''}
+<div class="grid"><div class="card stat w"><small>Omzet hari ini (bukan laba)</small><div>${rp(sum)}</div></div><div class="card stat"><small>Transaksi</small><div>${tx.length}</div></div><div class="card stat"><small>Rata-rata</small><div>${rp(tx.length?Math.round(sum/tx.length):0)}</div></div><div class="card stat"><small>Produk aktif</small><div>${act}</div></div></div>
+<div class="card"><div class="row sp"><h2>Transaksi terbaru</h2><a href="#history">Lihat semua</a></div>${txTable(db.txs.slice(-5).reverse())}</div>`}
+function txTable(a,m){if(!a.length)return '<p class="mut">Belum ada transaksi. Mulai dari halaman Kasir.</p>';
+  return a.map(x=>`<div class="li" onclick="detail('${x.id}')"><div><b>${esc(x.id)}</b> ${x.void?'<span class="tag">Dibatalkan</span>':''}${x.exp?' <span class="tag" style="background:#e6f0ff;color:#12305c">Diekspor</span>':''}<div class="mut">${x.date} ${x.time} · ${x.items.reduce((s,i)=>s+i.qty,0)} item · ${esc(x.method)}</div></div><div class="row" style="flex-wrap:nowrap"><b ${x.void?'style="text-decoration:line-through;color:var(--m)"':''}>${rp(x.total)}</b>${m?`<button class="btn s sm" aria-label="Tindakan transaksi" onclick="event.stopPropagation();txmenu('${x.id}')">⋯</button>`:''}</div></div>`).join('')}
+/* PRODUK */
+function products(){const f=pq.toLowerCase(),a=db.products.filter(p=>(p.name+p.code+(p.cat||'')).toLowerCase().includes(f));
+  return `<div class="row sp"><h1>Produk</h1><div class="row"><button class="btn" onclick="pform()">+ Tambah</button>${db.products.length?'':'<button class="btn s" onclick="demoProd()">Isi contoh produk</button>'}</div></div>
+<input id="ps" type="search" placeholder="Cari nama, kode, atau kategori" value="${esc(pq)}" oninput="pq=this.value;render();const e=$('ps');e.focus();e.setSelectionRange(pq.length,pq.length)">
+<div class="card" style="margin-top:12px">${a.length?a.map(p=>`<div class="li" style="cursor:default"><div><b>${esc(p.name)}</b> ${p.demo?'<span class="tag">Demo</span>':''}<div class="mut">${esc(p.code)}${p.cat?' · '+esc(p.cat):''}</div><div>${rp(p.price)} · ${p.archived?'<span class="mut">Diarsipkan</span>':p.active?'<span class="ok">Aktif</span>':'<span class="mut">Nonaktif</span>'}</div></div><button class="btn s sm" aria-label="Tindakan produk" onclick="pmenu('${p.id}')">⋯</button></div>`).join(''):'<p class="mut">Belum ada produk. Tambahkan produk pertama Anda.</p>'}</div>`}
+function demoProd(){[['AIR-01','Air mineral 600 ml','Minuman',4000],['KOP-01','Kopi susu, gelas','Minuman',15000],['ROT-01','Roti cokelat','Makanan',8000],['BUK-01','Buku tulis','Alat tulis',6500],['KAU-01','Kaus polos','Pakaian',55000]].forEach(([code,name,cat,price])=>db.products.push({id:'PRD-'+uid(),code,name,cat,price,active:true,demo:true}));save();render()}
+function pform(id){const p=db.products.find(x=>x.id===id)||{};ov(`<h2>${id?'Edit':'Tambah'} produk</h2><label>Kode produk</label><input id="pc" value="${esc(p.code)}"><label>Nama produk</label><input id="pn" value="${esc(p.name)}"><label>Kategori (opsional)</label><input id="pk" value="${esc(p.cat)}"><label>Harga jual (Rp)</label><input id="pp" inputmode="numeric" autocomplete="off" oninput="mask(this)" value="${fmt(p.price)}"><div class="err" id="m"></div><div class="row"><button class="btn" onclick="psave('${id||''}')">Simpan</button><button class="btn s" onclick="cl()">Batal</button></div>`)}
+function psave(id){const code=$('pc').value.trim(),name=$('pn').value.trim(),cat=$('pk').value.trim(),price=num($('pp').value);
+  if(!code||!name)return setM('Kode dan nama produk wajib diisi.');if(!$('pp').value||price<=0)return setM('Harga harus diisi dan lebih dari 0.');
+  if(db.products.some(p=>p.id!==id&&p.code.toLowerCase()===code.toLowerCase()))return setM('Kode produk sudah dipakai.');
+  if(id){Object.assign(db.products.find(p=>p.id===id),{code,name,cat,price,demo:false})}else db.products.push({id:'PRD-'+uid(),code,name,cat,price,active:true});
+  save();cl();render()}
+function ptog(id){const p=db.products.find(x=>x.id===id);p.active=!p.active;if(p.active)p.archived=false;save();render()}
+/* KASIR */
+function total(){return cart.reduce((a,i)=>a+i.qty*i.price-i.disc,0)}
+function pos(){return `<h1>Kasir</h1><div class="pos"><div class="card" style="margin:0"><input id="qs" type="search" placeholder="Cari produk" value="${esc(q)}" oninput="q=this.value;list()"><div class="pl" id="pl"></div></div><div class="card" style="margin:0" id="cart"></div></div><div style="height:80px"></div><div class="bar" id="bar"></div>`}
+function list(){const f=q.toLowerCase(),a=db.products.filter(p=>p.active&&(p.name+p.code).toLowerCase().includes(f));
+  $('pl').innerHTML=a.length?a.map(p=>`<button class="pi" onclick="add('${p.id}')"><b>${esc(p.name)}</b><br>${rp(p.price)}</button>`).join(''):'<p class="mut">Tidak ada produk aktif yang cocok. Tambahkan di halaman Produk.</p>';drawCart()}
+function add(id){const p=db.products.find(x=>x.id===id),c=cart.find(i=>i.pid===id);if(c)c.qty=Math.min(9999,c.qty+1);else cart.push({pid:id,code:p.code,name:p.name,price:p.price,qty:1,disc:0});drawCart()}
+function setq(i,v){v=Number(v);if(!Number.isInteger(v)||v<1)v=1;cart[i].qty=Math.min(v,9999);if(cart[i].disc>cart[i].qty*cart[i].price)cart[i].disc=0;drawCart()}
+function setd(i,v){v=Math.min(Math.max(0,Math.floor(Number(v)||0)),cart[i].qty*cart[i].price);cart[i].disc=v;drawCart()}
+function drawCart(){const t=total();
+  $('cart').innerHTML=`<h2>Keranjang</h2>${cart.length?cart.map((i,k)=>`<div class="ci"><div class="ci1"><div><b>${esc(i.name)}</b><div class="mut">${rp(i.price)}</div></div><button class="btn s sm" onclick="cart.splice(${k},1);drawCart()" aria-label="Hapus item">✕</button></div><div class="ci2"><div class="st"><button class="btn s" onclick="setq(${k},${i.qty-1})" ${i.qty<=1?'disabled':''} aria-label="Kurangi">−</button><input inputmode="numeric" value="${i.qty}" onchange="setq(${k},num(this.value))" aria-label="Jumlah"><button class="btn s" onclick="setq(${k},${i.qty+1})" aria-label="Tambah">+</button></div><b>${rp(i.qty*i.price-i.disc)}</b></div><details ${i.disc?'open':''}><summary>Diskon${i.disc?' −'+rp(i.disc):''}</summary><input inputmode="numeric" autocomplete="off" placeholder="Diskon (Rp)" value="${fmt(i.disc||'')}" oninput="mask(this)" onchange="setd(${k},num(this.value))"></details></div>`).join(''):'<p class="mut">Keranjang kosong. Pilih produk untuk memulai.</p>'}`;
+  $('bar').innerHTML=`<div><small class="mut">Total</small><div class="tot">${rp(t)}</div></div><button class="btn" ${cart.length?'':'disabled'} onclick="payModal()">Bayar</button>`}
+function payModal(){if(!cart.length)return;const t=total();
+  ov(`<h2>Pembayaran</h2><div class="tot">${rp(t)}</div><div class="mut">${cart.reduce((a,i)=>a+i.qty,0)} item</div><label>Metode pembayaran</label><select onchange="pay.m=this.value;payModal()">${['Tunai','Transfer','QRIS'].map(m=>`<option ${pay.m===m?'selected':''}>${m}</option>`).join('')}</select>
+${pay.m==='Tunai'?`<label>Uang diterima (Rp)</label><input id="pd" inputmode="numeric" autocomplete="off" value="${fmt(pay.paid)}" oninput="mask(this);pay.paid=this.value?String(num(this.value)):'';chg()"><div class="row" style="margin-top:6px"><button class="btn s sm" onclick="pay.paid=String(total());payModal()">Uang pas</button></div><p id="chg"></p>`:'<p class="mut">Hanya mencatat metode pembayaran. Pembayaran tidak diverifikasi aplikasi.</p>'}
+<div class="err" id="m"></div><div class="row"><button class="btn" id="sv" onclick="commit()">Simpan transaksi</button><button class="btn s" onclick="cl()">Kembali</button></div>`);chg()}
+function chg(){const e=$('chg');if(!e)return;const t=total(),p=Number(pay.paid);e.innerHTML=pay.paid===''?'':p>=t?`Kembalian: <b>${rp(p-t)}</b>`:`<span class="err">Uang kurang ${rp(t-p)}</span>`}
+function commit(){if(saving)return;const t=total(),pd=Number(pay.paid);
+  if(!cart.length||cart.some(i=>!Number.isInteger(i.qty)||i.qty<1))return setM('Periksa kuantitas item.');if(t<=0)return setM('Total harus lebih dari 0.');
+  if(pay.m==='Tunai'&&(pay.paid===''||!(pd>=t)))return setM('Uang diterima kurang dari total.');
+  saving=true;const b=$('sv');if(b)b.disabled=true;
+  try{const p=pay.m==='Tunai'?pd:t,n=new Date(),d=dstr(n),key=d.replace(/-/g,'');db.seq[key]=(db.seq[key]||0)+1;
+    const tx={id:'TRX-'+key+'-'+String(db.seq[key]).padStart(4,'0'),date:d,time:tstr(n),method:pay.m,items:cart.map(i=>({pid:i.pid,code:i.code,name:i.name,qty:i.qty,price:i.price,disc:i.disc,line:i.qty*i.price-i.disc})),total:t,paid:p,change:p-t};
+    db.txs.push(tx);save();cart=[];pay={m:pay.m,paid:''};cl();render();receipt(tx,'Transaksi tersimpan.')}
+  catch(e){db.txs.pop();ov('<h2>Gagal menyimpan</h2><p class="err">Penyimpanan browser gagal (mungkin penuh atau diblokir). Keranjang tidak dikosongkan.</p><button class="btn" onclick="cl()">Tutup</button>')}
+  finally{saving=false}}
+function receipt(x,msg){ov(`${msg?`<p class="ok">${msg}</p>`:''}${x.void?'<p class="err"><b>TRANSAKSI DIBATALKAN</b></p>':''}<div class="rcpt"><b>${esc(db.biz.name)}</b><br>${esc(db.biz.addr)}<hr>${x.id}<br>${x.date} ${x.time} · ${x.method}<hr>${x.items.map(i=>`${esc(i.name)}<br>&nbsp;${i.qty} x ${rp(i.price)}${i.disc?` − ${rp(i.disc)}`:''} = ${rp(i.line)}`).join('<br>')}<hr>TOTAL ${rp(x.total)}<br>Bayar ${rp(x.paid)}<br>Kembali ${rp(x.change)}<hr>Terima kasih</div><div class="row" style="margin-top:12px"><button class="btn" onclick="print()">Cetak struk</button><button class="btn s" onclick="cl()">Tutup</button></div>`)}
+function detail(id){receipt(db.txs.find(x=>x.id===id))}
+/* RIWAYAT */
+function inRange(x,a,b){return(!a||x.date>=a)&&(!b||x.date<=b)}
+function history(){return `<h1>Riwayat transaksi</h1><input type="search" placeholder="Cari ID transaksi" value="${esc(hf.q)}" oninput="hf.q=this.value;hl()"><details class="card flt" ${hf.a||hf.b?'open':''}><summary>Filter tanggal</summary><div class="row"><div style="flex:1;min-width:130px"><label>Dari</label><input type="date" value="${hf.a}" onchange="hf.a=this.value;hl()"></div><div style="flex:1;min-width:130px"><label>Sampai</label><input type="date" value="${hf.b}" onchange="hf.b=this.value;hl()"></div></div></details><div class="card" id="hl">${hrows()}</div><p class="mut">Transaksi selesai tidak dapat dihapus.</p>`}
+function hrows(){return txTable(db.txs.filter(x=>x.id.toLowerCase().includes(hf.q.toLowerCase())&&inRange(x,hf.a,hf.b)).reverse(),1)}
+function hl(){$('hl').innerHTML=hrows()}
+/* CSV */
+const HEAD=['schema_version','business_id','transaction_id','transaction_date','transaction_time','payment_method','product_id','product_name','quantity','unit_price','discount_amount','line_total','transaction_total','amount_paid','change_amount'];
+const cell=v=>{v=String(v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+function rows(a,b){const t=db.txs.filter(x=>inRange(x,a,b)&&!x.void);let n=0;t.forEach(x=>n+=x.items.length);return{t,n,sum:t.reduce((s,x)=>s+x.total,0)}}
+function buildCsv(txs){const L=[HEAD.join(',')];txs.forEach(x=>x.items.forEach(i=>L.push([SCHEMA,db.biz.id,x.id,x.date,x.time,x.method,i.pid,i.name,i.qty,i.price,i.disc,i.line,x.total,x.paid,x.change].map(cell).join(','))));return '\ufeff'+L.join('\r\n')+'\r\n'}
+function exportPg(){return `<h1>Ekspor CSV</h1><div class="card"><div class="row"><div style="flex:1"><label>Tanggal awal</label><input type="date" id="xa" value="${ex.a}" onchange="ex.a=this.value;xp()"></div><div style="flex:1"><label>Tanggal akhir</label><input type="date" id="xb" value="${ex.b}" onchange="ex.b=this.value;xp()"></div></div><div id="xp"></div>
+<div class="row" style="margin-top:10px"><button class="btn" onclick="dl(true)">Export Semua Transaksi</button><button class="btn s" onclick="dl(false)">Export Berdasarkan Periode</button></div><p class="mut">Ekspor hanya mengunduh file ke perangkat ini. File belum terkirim atau diimpor ke sistem lain, dan transaksi sumber tidak berubah.</p></div>`+(setTimeout(xp),'')}
+function xp(){const e=$('xp');if(!e)return;if(ex.a&&ex.b&&ex.a>ex.b){e.innerHTML='<p class="err">Tanggal awal tidak boleh setelah tanggal akhir.</p>';return}
+  const r=rows(ex.a,ex.b);e.innerHTML=`<h2 style="margin-top:12px">Pratinjau</h2><p>Periode: ${ex.a||'awal'} s/d ${ex.b||'sekarang'}<br>Transaksi: <b>${r.t.length}</b> · Baris item: <b>${r.n}</b><br>Total penjualan (transaksi unik): <b>${rp(r.sum)}</b></p>`+(r.n?`<div class="sc"><table><tr>${HEAD.slice(2,13).map(h=>`<th>${h}</th>`).join('')}</tr>${buildCsv(r.t).split('\r\n').slice(1,4).filter(Boolean).map(l=>`<tr>${l.split(',').slice(2,13).map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div><p class="mut">Pratinjau 3 baris pertama (tampilan kasar).</p>`:'')}
+function dl(all){const a=all?'':ex.a,b=all?'':ex.b;if(a&&b&&a>b)return;const r=rows(a,b);if(!r.t.length)return ov('<h2>Tidak ada transaksi</h2><p>Tidak ada transaksi pada periode ini, jadi file tidak dibuat.</p><button class="btn" onclick="cl()">Tutup</button>');
+  const n=new Date(),name=`catatin_transaksi_${db.biz.id}_${dstr(n).replace(/-/g,'')}_${tstr(n).replace(/:/g,'')}.csv`,u=URL.createObjectURL(new Blob([buildCsv(r.t)],{type:'text/csv;charset=utf-8'})),l=document.createElement('a');l.href=u;l.download=name;l.click();const iso=new Date().toISOString();r.t.forEach(x=>x.exp=iso);try{save()}catch(e){}setTimeout(()=>URL.revokeObjectURL(u),2000);
+  ov(`<h2>File CSV berhasil dibuat</h2><p>${name}<br>${r.t.length} transaksi, ${r.n} baris.</p><button class="btn" onclick="cl()">Tutup</button>`)}
+/* PROFIL */
+function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">ID usaha (dipakai di CSV): <b>${b.id}</b></p><label>Nama usaha</label><input id="bn" value="${esc(b.name)}"><label>Nama pemilik/pengguna</label><input id="bo" value="${esc(b.owner)}"><label>Kontak (opsional)</label><input id="bc" value="${esc(b.contact)}"><label>Alamat (opsional)</label><input id="ba" value="${esc(b.addr)}"><div class="err" id="m"></div><button class="btn" onclick="bsave()">Simpan</button></div><div class="warn">Data tersimpan di browser/perangkat ini saja. Gunakan Ekspor CSV untuk salinan data transaksi.</div>`}
+function bsave(){const n=$('bn').value.trim();if(!n)return setM('Nama usaha wajib diisi.');Object.assign(db.biz,{name:n,owner:$('bo').value.trim(),contact:$('bc').value.trim(),addr:$('ba').value.trim()});save();$('m').className='ok';setM('Tersimpan.')}
+let busy=false;
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2800)}
+const G='<div style="display:grid;gap:8px;margin-top:12px">',RB='style="background:var(--r)"';
+function pUsed(id){return db.txs.filter(x=>x.items.some(i=>i.pid===id)).length}
+function pmenu(id){const p=db.products.find(x=>x.id===id);ov(`<h2>${esc(p.name)}</h2><div class="mut">${esc(p.code)}</div>${G}<button class="btn s" onclick="cl();pform('${id}')">Edit</button><button class="btn s" onclick="cl();ptog('${id}')">${p.active?'Nonaktifkan':p.archived?'Aktifkan kembali':'Aktifkan'}</button><button class="btn s" style="color:var(--r)" onclick="pdel('${id}')">${pUsed(id)?'Arsipkan…':'Hapus…'}</button><button class="btn s" onclick="cl()">Tutup</button></div>`)}
+function pdel(id){const p=db.products.find(x=>x.id===id),n=pUsed(id);
+  ov(n?`<h2>Arsipkan produk?</h2><p>Produk <b>${esc(p.name)}</b> sudah dipakai di ${n} transaksi, jadi tidak bisa dihapus. Produk akan diarsipkan: tidak muncul di Kasir, sedangkan riwayat transaksi lama tidak berubah.</p><div class="err" id="m"></div><div class="row"><button class="btn" id="ok" onclick="pdo('${id}')">Arsipkan</button><button class="btn s" onclick="cl()">Batal</button></div>`
+  :`<h2>Hapus produk?</h2><p>Produk <b>${esc(p.name)}</b> belum pernah dipakai di transaksi dan akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.</p><div class="err" id="m"></div><div class="row"><button class="btn" ${RB} id="ok" onclick="pdo('${id}')">Hapus permanen</button><button class="btn s" onclick="cl()">Batal</button></div>`)}
+function pdo(id){if(busy)return;busy=true;const b=$('ok');if(b)b.disabled=true;const snap=JSON.stringify(db.products);let msg='';
+  try{const i=db.products.findIndex(x=>x.id===id);if(i<0)throw new Error('tidak ditemukan');
+    if(pUsed(id)){Object.assign(db.products[i],{archived:true,active:false});msg='Produk diarsipkan.'}else{db.products.splice(i,1);msg='Produk dihapus.'}
+    save();cl();render();toast(msg)}
+  catch(e){db.products=JSON.parse(snap);setM('Gagal menyimpan perubahan. Tidak ada data yang diubah.')}
+  finally{busy=false}}
+function expWarn(x){return x.exp?`<div class="warn"><b>Sudah pernah diekspor ke CSV</b> (${x.exp.slice(0,10)}, penanda lokal). Perubahan di sini tidak mengubah file CSV yang sudah diunduh, maupun data di sistem lain yang mungkin sudah mengimpornya.</div>`:''}
+function txmenu(id){const x=db.txs.find(t=>t.id===id);ov(`<h2>${esc(x.id)}</h2><div class="mut">${rp(x.total)}${x.void?' · Dibatalkan':''}</div>${G}<button class="btn s" onclick="cl();detail('${id}')">Lihat / cetak struk</button>${x.void?'':`<button class="btn s" onclick="tvoid('${id}')">Batalkan transaksi…</button>`}<button class="btn s" style="color:var(--r)" onclick="tdel('${id}')">Hapus permanen…</button><button class="btn s" onclick="cl()">Tutup</button></div>`)}
+function tvoid(id){const x=db.txs.find(t=>t.id===id);ov(`<h2>Batalkan transaksi?</h2><p><b>${esc(x.id)}</b><br>Total ${rp(x.total)}</p><p>Transaksi tetap tersimpan di riwayat dengan status Dibatalkan, tidak dihitung dalam omzet, dan tidak ikut ekspor CSV berikutnya.</p>${expWarn(x)}<div class="err" id="m"></div><div class="row"><button class="btn" id="ok" onclick="tdo('${id}','void')">Ya, batalkan</button><button class="btn s" onclick="cl()">Kembali</button></div>`)}
+function tdel(id){const x=db.txs.find(t=>t.id===id);ov(`<h2>Hapus transaksi?</h2><p><b>${esc(x.id)}</b><br>Total ${rp(x.total)}</p><p>Transaksi beserta semua rincian itemnya dihapus permanen dan tidak dapat dikembalikan. Alternatif yang lebih aman: batalkan transaksi.</p>${expWarn(x)}${x.exp?'<label style="display:flex;gap:8px;align-items:center;color:var(--t)"><input type="checkbox" style="width:auto;min-height:0" onchange="$(\'ok\').disabled=!this.checked"> Saya mengerti</label>':''}<div class="err" id="m"></div><div class="row"><button class="btn" ${RB} id="ok" ${x.exp?'disabled':''} onclick="tdo('${id}','del')">Hapus permanen</button><button class="btn s" onclick="cl()">Batal</button></div>`)}
+function tdo(id,mode){if(busy)return;busy=true;const b=$('ok');if(b)b.disabled=true;const snap=JSON.stringify(db.txs);
+  try{const i=db.txs.findIndex(x=>x.id===id);if(i<0)throw new Error('tidak ditemukan');
+    if(mode==='del')db.txs.splice(i,1);else Object.assign(db.txs[i],{void:true,voidAt:new Date().toISOString()});
+    save();cl();render();toast(mode==='del'?'Transaksi dihapus.':'Transaksi dibatalkan.')}
+  catch(e){db.txs=JSON.parse(snap);setM('Gagal menyimpan perubahan. Tidak ada data yang diubah.')}
+  finally{busy=false}}
+function ov(h){$('ov').innerHTML=`<div class="ov" onclick="if(event.target===this)cl()"><div class="md">${h}</div></div>`}
+function cl(){$('ov').innerHTML=''}
+render();
+</script></body></html>
