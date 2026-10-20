@@ -25,6 +25,7 @@ details summary{cursor:pointer;padding:4px 0;color:var(--n);font-weight:600}.flt
 .auth{max-width:420px;margin:5vh auto;padding:0 16px}.ov{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:14px;z-index:9}.md{background:#fff;border-radius:14px;padding:18px;max-width:440px;width:100%;max-height:90vh;overflow:auto}
 input[readonly]{background:#eef2f8;color:var(--m)}.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--n);color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw}.rcpt{font-family:ui-monospace,monospace;font-size:.85rem}.rcpt hr{border:0;border-top:1px dashed #888}
 @media(min-width:800px){.hb{display:none}.top{justify-content:flex-start;gap:24px}.top nav{display:flex;position:static;flex-direction:row;width:auto;background:none;box-shadow:none;padding:0;flex:1}.top nav a:last-child{margin-left:auto}.pos{grid-template-columns:1.2fr 1fr}.grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}}
+.plogo{display:block;max-width:160px;max-height:96px;margin:6px 0 8px;padding:4px;border:1px solid var(--l);border-radius:8px;background:#fff}.rlogo{display:block;margin:0 auto 6px;max-width:120px;max-height:56px}
 @media print{body *{visibility:hidden}.rcpt,.rcpt *{visibility:visible}.rcpt{position:absolute;left:0;top:0;width:100%}.ov{background:none}}
 </style></head><body><div id="app"></div><div id="ov"></div>
 <script>
@@ -130,7 +131,7 @@ function commit(){if(saving)return;const t=total(),pd=Number(pay.paid);
     db.txs.push(tx);save();cart=[];pay={m:pay.m,paid:''};cl();render();receipt(tx,'Transaksi tersimpan.')}
   catch(e){db.txs.pop();ov('<h2>Gagal menyimpan</h2><p class="err">Penyimpanan browser gagal (mungkin penuh atau diblokir). Keranjang tidak dikosongkan.</p><button class="btn" onclick="cl()">Tutup</button>')}
   finally{saving=false}}
-function receipt(x,msg){ov(`${msg?`<p class="ok">${msg}</p>`:''}${x.void?'<p class="err"><b>TRANSAKSI DIBATALKAN</b></p>':''}<div class="rcpt"><b>${esc(db.biz.name)}</b><br>${esc(db.biz.addr)}<hr>${x.id}<br>${x.date} ${x.time} · ${x.method}<hr>${x.items.map(i=>`${esc(i.name)} (${esc(i.code||'')})<br>&nbsp;${i.qty} x ${rp(i.price)}${i.disc?` − ${rp(i.disc)}`:''} = ${rp(i.line)}`).join('<br>')}<hr>TOTAL ${rp(x.total)}<br>Bayar ${rp(x.paid)}<br>Kembali ${rp(x.change)}<hr>Terima kasih</div><div class="row" style="margin-top:12px"><button class="btn" onclick="print()">Cetak struk</button><button class="btn s" onclick="cl()">Tutup</button></div>`)}
+function receipt(x,msg){ov(`${msg?`<p class="ok">${msg}</p>`:''}${x.void?'<p class="err"><b>TRANSAKSI DIBATALKAN</b></p>':''}<div class="rcpt">${okLogo(db.biz.logo)?`<img class="rlogo" src="${db.biz.logo}" alt="">`:''}<b>${esc(db.biz.name)}</b><br>${esc(db.biz.addr)}<hr>${x.id}<br>${x.date} ${x.time} · ${x.method}<hr>${x.items.map(i=>`${esc(i.name)} (${esc(i.code||'')})<br>&nbsp;${i.qty} x ${rp(i.price)}${i.disc?` − ${rp(i.disc)}`:''} = ${rp(i.line)}`).join('<br>')}<hr>TOTAL ${rp(x.total)}<br>Bayar ${rp(x.paid)}<br>Kembali ${rp(x.change)}<hr>Terima kasih</div><div class="row" style="margin-top:12px"><button class="btn" onclick="print()">Cetak struk</button><button class="btn s" onclick="cl()">Tutup</button></div>`)}
 function detail(id){receipt(db.txs.find(x=>x.id===id))}
 /* RIWAYAT */
 function inRange(x,a,b){return(!a||x.date>=a)&&(!b||x.date<=b)}
@@ -150,7 +151,22 @@ function dl(all){const a=all?'':ex.a,b=all?'':ex.b;if(a&&b&&a>b)return;const r=r
   const n=new Date(),name=`catatin_transaksi_${db.biz.id}_${dstr(n).replace(/-/g,'')}_${tstr(n).replace(/:/g,'')}.csv`,u=URL.createObjectURL(new Blob([buildCsv(r.t)],{type:'text/csv;charset=utf-8'})),l=document.createElement('a');l.href=u;l.download=name;l.click();const iso=new Date().toISOString();r.t.forEach(x=>x.exp=iso);try{save()}catch(e){}setTimeout(()=>URL.revokeObjectURL(u),2000);
   ov(`<h2>File CSV berhasil dibuat</h2><p>${name}<br>${r.t.length} transaksi, ${r.n} baris.</p><button class="btn" onclick="cl()">Tutup</button>`)}
 /* PROFIL */
-function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">ID usaha (dipakai di CSV): <b>${b.id}</b></p><label>Nama usaha</label><input id="bn" value="${esc(b.name)}"><label>Nama pemilik/pengguna</label><input id="bo" value="${esc(b.owner)}"><label>Kontak (opsional)</label><input id="bc" value="${esc(b.contact)}"><label>Alamat (opsional)</label><input id="ba" value="${esc(b.addr)}"><div class="err" id="m"></div><button class="btn" onclick="bsave()">Simpan</button></div><div class="warn">Data tersimpan di browser/perangkat ini saja. Gunakan Ekspor CSV untuk salinan data transaksi.</div>`}
+function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">ID usaha (dipakai di CSV): <b>${b.id}</b></p><label>Logo usaha (opsional)</label><div id="lbox">${lview()}</div><input type="file" id="bl" accept="image/*" onchange="lupload(this)"><div class="mut">Tampil di struk. Gambar dikecilkan otomatis.</div><label>Nama usaha</label><input id="bn" value="${esc(b.name)}"><label>Nama pemilik/pengguna</label><input id="bo" value="${esc(b.owner)}"><label>Kontak (opsional)</label><input id="bc" value="${esc(b.contact)}"><label>Alamat (opsional)</label><input id="ba" value="${esc(b.addr)}"><div class="err" id="m"></div><button class="btn" onclick="bsave()">Simpan</button></div><div class="warn">Data tersimpan di browser/perangkat ini saja. Gunakan Ekspor CSV untuk salinan data transaksi.</div>`}
+function okLogo(l){return typeof l==='string'&&/^data:image\/(png|jpeg|webp|gif);base64,/.test(l)}
+function lview(){const l=db.biz.logo;return okLogo(l)?`<img class="plogo" src="${l}" alt="Logo usaha"><button class="btn s sm" type="button" onclick="ldel()">Hapus logo</button>`:'<div class="mut">Belum ada logo.</div>'}
+function lupload(el){const f=el.files&&el.files[0];if(!f)return;
+  if(!/^image\/(png|jpe?g|webp|gif)$/i.test(f.type)){el.value='';return toast('File harus berupa gambar (PNG, JPG, atau WebP).')}
+  if(f.size>8*1024*1024){el.value='';return toast('Ukuran gambar maksimal 8 MB.')}
+  const rd=new FileReader();rd.onerror=()=>toast('Gagal membaca gambar.');
+  rd.onload=()=>{const im=new Image();im.onerror=()=>toast('Gambar tidak bisa dibuka.');
+    im.onload=()=>{const M=256,k=Math.min(1,M/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*k)),h=Math.max(1,Math.round(im.height*k)),c=document.createElement('canvas');
+      c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);
+      const old=db.biz.logo;db.biz.logo=c.toDataURL('image/png');
+      try{save()}catch(e){db.biz.logo=old;return toast('Penyimpanan penuh, logo tidak tersimpan.')}
+      $('lbox').innerHTML=lview();el.value='';toast('Logo tersimpan.')};
+    im.src=rd.result};
+  rd.readAsDataURL(f)}
+function ldel(){delete db.biz.logo;save();$('lbox').innerHTML=lview();toast('Logo dihapus.')}
 function bsave(){const n=$('bn').value.trim();if(!n)return setM('Nama usaha wajib diisi.');Object.assign(db.biz,{name:n,owner:$('bo').value.trim(),contact:$('bc').value.trim(),addr:$('ba').value.trim()});save();$('m').className='ok';setM('Tersimpan.')}
 let busy=false;
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2800)}
