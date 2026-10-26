@@ -1,7 +1,7 @@
 # Kasir Catat.in — repo mandiri
 
-Kasir browser untuk Ilham ERP. Penjualan dan HPP dicatat sebagai jurnal di
-Supabase yang sama. Repo ini hanya berisi aplikasi kasir; halaman ERP tetap di
+Kasir browser untuk Ilham ERP. Penjualan dan harga modal langsung tersimpan
+di database yang sama. Repo ini hanya berisi aplikasi kasir; halaman ERP tetap di
 repo `AccountingIlhamV1/Ilhamoke`.
 
 ## Struktur yang benar
@@ -22,6 +22,8 @@ Semua berkas berada di **root repo**, bukan di dalam folder tambahan:
 │   ├── auth.js
 │   ├── app.js
 │   ├── sale-core.js
+│   ├── cash-core.js
+│   ├── parser.js
 │   └── pos-erp.js
 └── README.md
 ```
@@ -104,13 +106,47 @@ pasang ulang — Chrome menyimpan orientasi dari manifest saat pemasangan.
 ## Pemakaian
 
 1. Masuk dengan akun Ilham ERP.
-2. Buka **Pengaturan**, pilih usaha, lengkapi pemetaan akun.
-3. Lakukan satu penjualan kecil dan periksa jurnal di ERP.
-4. Transaksi yang sudah tercatat di ERP terkunci dari batal/hapus di POS.
-5. Transaksi lokal lama bisa dicatat lewat **Riwayat → Catat ke ERP**.
+2. Buka **Pengaturan**, pilih usaha, lengkapi akun pencatatan.
+3. Lakukan satu penjualan kecil dan periksa catatannya di Ilham ERP.
+4. Transaksi yang sudah tersimpan di ERP terkunci dari batal/hapus di POS.
+5. Transaksi lokal lama bisa disimpan lewat **Riwayat → Simpan ke ERP**.
 
-Kasir tidak mengubah stok. Koreksi transaksi yang sudah tercatat dilakukan
-lewat jurnal koreksi di ERP.
+## Uang masuk dan uang keluar
+
+Menu **Uang** mencatat uang yang masuk atau keluar selain dari penjualan.
+Semua pilihan memakai bahasa sehari-hari supaya bisa dipakai tanpa latar
+belakang akuntansi.
+
+| Pilihan di kasir | Artinya |
+|---|---|
+| Uang masuk | Uang masuk ke kas/bank, dicatat sebagai pendapatan |
+| Uang keluar | Belanja atau biaya yang dibayar dari kas/bank |
+| Uang dari pemilik | Pemilik menambah uang ke usaha |
+| Ambil uang pribadi | Pemilik memakai uang usaha untuk keperluan pribadi |
+| Bayar utang | Melunasi utang usaha dari kas/bank |
+| Pelanggan bayar utang | Pelanggan melunasi utangnya ke usaha |
+
+Dua cara mengisi:
+
+- **Tulis cepat** — tulis bebas seperti di bot Telegram, misalnya
+  “terima 500rb jasa servis”, lalu tekan **Baca**. Mesin `TxParser`
+  yang sama dengan kotak masuk Telegram mengisi jenis, tanggal, nominal,
+  dan usulan akun.
+- **Isi sendiri** — pilih jenis catatan, tanggal, nominal, keterangan, lalu
+  akun tujuan dan sumber uang. Akun yang disarankan muncul di grup pertama.
+
+Sebelum disimpan, pilihan akun ditampilkan ulang dengan kalimat seperti
+“Uang masuk ke …” dan “Dicatat sebagai …” untuk dikonfirmasi. Catatan yang
+sudah tersimpan tidak bisa diubah dari kasir; koreksi dilakukan di Ilham ERP.
+Penjualan tetap harus lewat halaman **Kasir** agar rincian barang dan harga
+modal ikut tercatat.
+
+Kasir tidak mengubah stok. Koreksi transaksi yang sudah tersimpan dilakukan
+di Ilham ERP.
+
+Di balik layar, tiap pilihan menjadi satu baris di tabel `transactions`
+lewat `ERP.createTransactionsRemote` (debit/kredit mengikuti aturan
+`assets/cash-core.js`). Tidak ada tabel, RPC, atau kolom baru.
 
 ## Offline
 

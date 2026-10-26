@@ -12,7 +12,7 @@
    Penjualan tetap harus tersambung ke ERP untuk disimpan.
 ===================================================== */
 
-const VERSION = "2026-10-27.6";
+const VERSION = "2026-10-27.8";
 const CACHE = "catatin-pos-" + VERSION;
 
 const SW_URL = new URL(self.location.href);
@@ -29,6 +29,8 @@ const CORE = [
   new URL("icons/icon-512.png", BASE).href,
   new URL("assets/auth.js", BASE).href,
   new URL("assets/sale-core.js", BASE).href,
+  new URL("assets/cash-core.js", BASE).href,
+  new URL("assets/parser.js", BASE).href,
   new URL("assets/app.js", BASE).href,
   new URL("assets/pos-erp.js", BASE).href
 ];
