@@ -155,7 +155,7 @@ function dash(){const t=dstr(new Date()),tx=db.txs.filter(x=>x.date===t&&!x.void
   return `<div class="row sp"><h1>Beranda</h1><button class="btn" onclick="go('pos')">Mulai transaksi</button></div><p class="mut" style="margin-top:-6px">${esc(db.biz.name)}${erpUser&&erpUser.email?' · '+esc(erpUser.email):''}</p>${installCard()}${legacyBanner()}${catalogCachedAt?`<div class="warn">Katalog sedang memakai salinan terakhir (${esc(String(catalogCachedAt).slice(0,10))}) karena server belum bisa dihubungi. Harga dan harga modal bisa berubah di Ilham ERP.</div>`:''}
 ${sumCard()}<div class="grid"><div class="card stat w"><small>Omzet hari ini di perangkat ini (bukan laba)</small><div>${rp(sum)}</div></div><div class="card stat"><small>Transaksi lokal hari ini</small><div>${tx.length}</div></div><div class="card stat"><small>Rata-rata</small><div>${rp(tx.length?Math.round(sum/tx.length):0)}</div></div><div class="card stat"><small>Produk aktif di ERP</small><div>${act}</div></div></div>
 <div class="card"><div class="row sp"><h2>Transaksi terbaru</h2><a href="#history">Lihat semua</a></div>${txTable(db.txs.slice(-5).reverse())}</div>
-<div class="mut">Penjualan langsung tersimpan sebagai catatan di Ilham ERP. Stok bahan tidak berubah otomatis.</div>`}
+<div class="mut">Penjualan langsung tersimpan sebagai catatan di Ilham ERP, dan stok bahan berkurang sesuai resep produk.</div>`}
 function txTable(a,m){if(!a.length)return '<p class="mut">Belum ada transaksi. Mulai dari halaman Kasir.</p>';
   return a.map(x=>`<div class="li" onclick="detail('${x.id}')"><div><b>${esc(x.id)}</b> ${x.void?'<span class="tag">Dibatalkan</span>':''}${x.erpPostedAt?'<span class="tag" style="background:#e6f0ff;color:#12305c">ERP</span>':''}${x.legacyLocal&&!x.erpPostedAt?' <span class="tag">Lokal</span>':''}<div class="mut">${x.date} ${x.time} · ${x.items.reduce((s,i)=>s+i.qty,0)} item · ${esc(x.method)}</div></div><div class="row" style="flex-wrap:nowrap"><b ${x.void?'style="text-decoration:line-through;color:var(--m)"':''}>${rp(x.total)}</b>${m?`<button class="btn s sm" aria-label="Tindakan transaksi" onclick="event.stopPropagation();txmenu('${x.id}')">⋯</button>`:''}</div></div>`).join('')}
 /* KATALOG (dari ERP) */
@@ -198,6 +198,44 @@ ${offline?'<div class="warn"><b>Tidak ada koneksi internet.</b> Transaksi belum 
 ${problems.length?`<div class="warn"><b>Pengaturan pencatatan belum lengkap.</b> ${esc(problems.join(' '))} <a href="#setup" onclick="cl();go('setup')">Buka Pengaturan</a></div>`:''}
 <div class="err" id="m"></div><div class="row"><button class="btn" id="sv" onclick="commit()" ${problems.length||offline?'disabled':''}>Simpan transaksi</button><button class="btn s" onclick="cl()">Kembali</button></div>`);chg()}
 function chg(){const e=$('chg');if(!e)return;const t=total(),p=Number(pay.paid);e.innerHTML=pay.paid===''?'':p>=t?`Kembalian: <b>${rp(p-t)}</b>`:`<span class="err">Uang kurang ${rp(t-p)}</span>`}
+/* STOK BAHAN OTOMATIS: stok bahan berkurang sesuai resep tiap produk yang terjual (sama seperti bot Telegram).
+   Dipanggil hanya setelah penjualan tercatat di ERP dan bukan duplikat. Kalau gagal, penjualan tetap tersimpan
+   dan kasir memberi peringatan. Stok boleh minus supaya selisihnya kelihatan. */
+function qtyTxt(n){return String(+Number(n).toFixed(4)).replace('.',',')}
+async function useStock(bizId,items){
+  const out={msg:'',warn:''};
+  try{
+    const sb=ERPAuth.client,sold=new Map();
+    items.forEach(i=>sold.set(i.pid,(sold.get(i.pid)||0)+i.qty));
+    const ids=[...sold.keys()];if(!ids.length)return out;
+    const rc=await sb.from('product_recipe').select('product_id,material_id,qty').eq('business_id',bizId).in('product_id',ids);
+    if(rc.error)throw rc.error;
+    const use=new Map();
+    (rc.data||[]).forEach(l=>{const q=(sold.get(l.product_id)||0)*(Number(l.qty)||0);if(q>0)use.set(l.material_id,(use.get(l.material_id)||0)+q)});
+    if(!use.size)return out;
+    const done=[],failed=[];
+    for(const [mid,q] of use){
+      let ok=false,name='',unit='',stock=0,last;
+      for(let t=0;t<3&&!ok;t++){
+        const g=await sb.from('materials').select('name,unit,stock').eq('id',mid).eq('business_id',bizId).limit(1);
+        if(g.error||!g.data||!g.data.length)break;
+        const raw=g.data[0].stock;
+        if(t>0&&raw===last)break; /* stok tidak berubah tapi tulis gagal: bukan bentrok, kemungkinan tidak ada izin */
+        last=raw;name=g.data[0].name||'';unit=g.data[0].unit||'';
+        const next=Math.round(((Number(raw)||0)-q)*10000)/10000;
+        let qb=sb.from('materials').update({stock:next}).eq('id',mid).eq('business_id',bizId);
+        qb=raw===null||raw===undefined?qb.is('stock',null):qb.eq('stock',raw); /* hanya menulis kalau stok belum diubah perangkat lain */
+        const up=await qb.select('id');
+        if(up.error)break;
+        if(up.data&&up.data.length){ok=true;stock=next}
+      }
+      if(ok)done.push({name,unit,stock});else failed.push(name||'bahan');
+    }
+    if(done.length){out.msg='<br>Sisa stok: '+done.map(x=>esc(x.name)+' '+qtyTxt(x.stock)+' '+esc(x.unit)).join(', ')+'.';
+      if(done.some(x=>x.stock<0))out.warn+=' Ada stok minus. Isi stok awal bahan di ERP.'}
+    if(failed.length)out.warn+=' Stok belum berhasil diperbarui untuk: '+failed.join(', ')+'. Cek di ERP, menu Bahan & Produk.';
+  }catch(e){out.warn=' Stok bahan belum berhasil diperbarui. Cek di ERP, menu Bahan & Produk.'}
+  return out}
 async function commit(){if(saving)return;if(!onlineNow())return setM('Tidak ada koneksi internet. Transaksi belum disimpan. Sambungkan internet lalu tekan Simpan lagi.');const t=total(),pd=Number(pay.paid);
   if(!cart.length||cart.some(i=>!Number.isInteger(i.qty)||i.qty<1))return setM('Periksa kuantitas item.');if(t<=0)return setM('Total harus lebih dari 0.');
   if(pay.m==='Tunai'&&(pay.paid===''||!(pd>=t)))return setM('Uang diterima kurang dari total.');
@@ -213,11 +251,12 @@ async function commit(){if(saving)return;if(!onlineNow())return setM('Tidak ada 
     const res=await PosERP.postSale(erpBiz.id,sale,mapping);
     if(!res.ok){setM((res.errors||['Gagal menyimpan ke ERP.']).join(' '));return}
     db.seq[key]=seq;
-    const tx=Object.assign({},sale,{erpPostedAt:new Date().toISOString(),erpBusinessId:erpBiz.id,erpCogs:res.cogs,erpDuplicate:!!res.duplicate,erpWarning:plain([costWarning].concat(res.warnings||[]).filter(Boolean).join(' '))});
+    const st=res.duplicate?{msg:'',warn:''}:await useStock(erpBiz.id,sale.items);
+    const tx=Object.assign({},sale,{erpPostedAt:new Date().toISOString(),erpBusinessId:erpBiz.id,erpCogs:res.cogs,erpDuplicate:!!res.duplicate,erpWarning:plain([costWarning].concat(res.warnings||[],st.warn?[st.warn.trim()]:[]).filter(Boolean).join(' '))});
     let localSaved=true;
     try{db.txs.push(tx);save()}catch(e){db.txs.pop();localSaved=false}
     cart=[];pay={m:pay.m,paid:''};cl();render();
-    receipt(tx,localSaved?(res.duplicate?'Transaksi ini sudah tercatat di ERP.':'Transaksi tersimpan dan tercatat di ERP.'):'Tercatat di ERP, tetapi riwayat lokal gagal disimpan.');
+    receipt(tx,(localSaved?(res.duplicate?'Transaksi ini sudah tercatat di ERP.':'Transaksi tersimpan dan tercatat di ERP.'):'Tercatat di ERP, tetapi riwayat lokal gagal disimpan.')+st.msg);
   }
   catch(e){setM(ERP.friendlyError?ERP.friendlyError(e):String((e&&e.message)||e))}
   finally{saving=false;const btn=$('sv');if(btn)btn.disabled=false}}
@@ -356,11 +395,11 @@ function setup(){if(!erpBiz)return noBusinessPage();const businesses=ERP.getBusi
   return `<h1>Pengaturan pencatatan</h1><div class="card"><label>Usaha aktif</label>${businesses.length>1?`<select onchange="switchBusiness(this.value)">${businesses.map(b=>`<option value="${b.id}" ${ERP.idEqual(b.id,erpBiz.id)?'selected':''}>${esc(b.name)}</option>`).join('')}</select>`:`<p><b>${esc(erpBiz.name)}</b></p>`}<p class="mut">Daftar akun diambil dari Ilham ERP. Pengaturan ini sama dengan yang dipakai saat impor CSV di ERP.</p></div>
 <div class="card"><h2>Akun pencatatan</h2><div class="grid" style="grid-template-columns:1fr">${mappingFields()}</div><div class="${problems.length?'err':'ok'}" style="margin-top:10px">${problems.length?esc(problems.join(' ')):'Pengaturan sudah lengkap.'}</div><button class="btn" style="margin-top:10px" onclick="saveSetup()">Simpan pengaturan</button><p class="mut">Harga modal hanya dicatat bila akun harga modal dan akun stok dipilih. Tanpa keduanya, penjualan tetap tersimpan tetapi harga modal tidak ikut dicatat.</p></div>
 <div class="card"><h2>Aplikasi kasir</h2><p class="mut">${standalone()?'Kasir sudah dibuka sebagai aplikasi terpasang.':'Pasang kasir ke layar utama agar bisa dibuka seperti aplikasi biasa. Login dan penyimpanan transaksi tetap memerlukan internet.'}</p><button class="btn s" onclick="installApp()">${standalone()?'Info pemasangan':'Cara pasang'}</button></div>
-<div class="card"><h2>Catatan</h2><p class="mut">Kasir menyimpan catatan penjualan dan harga modal ke Ilham ERP. Stok bahan tidak berubah otomatis. Kalau ada transaksi yang harus dibatalkan, lakukan koreksi di Ilham ERP.</p></div>`}
+<div class="card"><h2>Catatan</h2><p class="mut">Kasir menyimpan catatan penjualan dan harga modal ke Ilham ERP. Stok bahan berkurang otomatis sesuai resep produk. Kalau ada transaksi yang harus dibatalkan, lakukan koreksi di Ilham ERP.</p></div>`}
 function saveSetup(){const map={};PosERP.METHODS.concat(['__revenue','__cogs','__inventory']).forEach(k=>{const e=$('map-'+k);if(e)map[k]=e.value});PosERP.saveMapping(erpBiz.id,map);mapping=map;toast('Pengaturan disimpan.');render()}
 async function switchBusiness(id){if(!id||id===erpBiz.id)return;if(cart.length&&!confirm('Ganti usaha akan mengosongkan keranjang. Lanjutkan?')){render();return}cart=[];booting=true;bootError='';render();try{await loadBusiness(id)}catch(e){bootError=ERP.friendlyError?ERP.friendlyError(e):String((e&&e.message)||e);booting=false;render()}}
 /* PROFIL */
-function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">Akun ERP: <b>${esc(erpUser&&erpUser.email||'-')}</b></p><p class="mut">ID usaha: <b>${esc(b.id||'-')}</b></p><label>Logo usaha (opsional, hanya untuk struk)</label><div id="lbox">${lview()}</div><input type="file" id="bl" accept="image/*" onchange="lupload(this)"><div class="mut">Tampil di struk. Gambar dikecilkan otomatis.</div><h2 style="margin-top:14px">${esc(b.name)}</h2><p class="mut">${esc(b.addr||'Alamat belum diisi di ERP.')}</p><div class="row"><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/business.html">Ubah data usaha di ERP</a><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/accounts.html">Buka COA</a></div></div><div class="warn">Nama, alamat, produk, bahan, dan akun diatur di ERP. Kasir tidak mengubah stok.</div>`}
+function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">Akun ERP: <b>${esc(erpUser&&erpUser.email||'-')}</b></p><p class="mut">ID usaha: <b>${esc(b.id||'-')}</b></p><label>Logo usaha (opsional, hanya untuk struk)</label><div id="lbox">${lview()}</div><input type="file" id="bl" accept="image/*" onchange="lupload(this)"><div class="mut">Tampil di struk. Gambar dikecilkan otomatis.</div><h2 style="margin-top:14px">${esc(b.name)}</h2><p class="mut">${esc(b.addr||'Alamat belum diisi di ERP.')}</p><div class="row"><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/business.html">Ubah data usaha di ERP</a><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/accounts.html">Buka COA</a></div></div><div class="warn">Nama, alamat, produk, bahan, dan akun diatur di ERP. Stok bahan berkurang otomatis saat penjualan, sesuai resep di ERP.</div>`}
 function okLogo(l){return typeof l==='string'&&/^data:image\/(png|jpeg|webp|gif);base64,/.test(l)}
 function lview(){const l=db.biz.logo;return okLogo(l)?`<img class="plogo" src="${l}" alt="Logo usaha"><button class="btn s sm" type="button" onclick="ldel()">Hapus logo</button>`:'<div class="mut">Belum ada logo.</div>'}
 function lupload(el){const f=el.files&&el.files[0];if(!f)return;

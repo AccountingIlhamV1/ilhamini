@@ -6,6 +6,7 @@ Kasir web statis untuk usaha kecil. Masuk memakai akun Ilham ERP yang sama, dan 
 
 - **Kasir:** pilih produk dari katalog ERP, diskon per barang, pembayaran Tunai, Transfer, atau QRIS, kembalian, dan cetak struk.
 - **Tercatat ke ERP:** penjualan dan harga modal masuk sebagai catatan di Ilham ERP, dengan pengecekan transaksi ganda.
+- **Stok bahan otomatis:** setiap penjualan mengurangi stok bahan sesuai resep produk di ERP. Stok boleh minus supaya selisihnya terlihat, dan kalau perangkat lain mengubah stok yang sama, hitungannya diulang dari angka terbaru. Kalau stok gagal diperbarui, penjualan tetap tersimpan dan kasir memberi peringatan.
 - **Uang masuk & keluar:** tulis seperti chat (contoh: "beli galon 20rb", "tambah modal 2jt") atau isi manual.
 - **Beranda:** ringkasan hari ini, kemarin, dan 7 hari yang dihitung dari data ERP (menyatukan semua perangkat).
 - **Lainnya:** ganti usaha, mode offline dengan peringatan, dan bisa dipasang sebagai aplikasi (PWA).
@@ -22,6 +23,6 @@ Buka `index.html` lewat server lokal, misalnya `python3 -m http.server`, lalu bu
 
 ## Batasan
 
-- Stok bahan tidak berubah otomatis dari kasir.
+- Pembelian bahan dan foto nota belum ada di kasir. Stok bertambah lewat ERP (menu Bahan & Produk) atau bot Telegram.
 - Riwayat di halaman Riwayat tersimpan di browser perangkat itu saja. Data resmi ada di Ilham ERP.
 - Transaksi yang sudah tercatat di ERP tidak bisa dibatalkan dari kasir. Koreksi dilakukan di Ilham ERP.
