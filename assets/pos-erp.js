@@ -123,22 +123,22 @@ window.PosERP = (function () {
       out.push("Usaha belum tersimpan di server ERP.");
     }
     if (!accountExists(accounts, m[method])) {
-      out.push("Akun debit untuk metode " + method + " belum dipilih.");
+      out.push("Uang masuk lewat " + method + " belum dipilih akunnya.");
     }
     if (!accountExists(accounts, m.__revenue)) {
-      out.push("Akun pendapatan belum dipilih.");
+      out.push("Akun pendapatan penjualan belum dipilih.");
     }
     if (accountExists(accounts, m[method]) && accountExists(accounts, m.__revenue) &&
         ERP.idEqual(m[method], m.__revenue)) {
-      out.push("Akun debit dan akun pendapatan tidak boleh sama.");
+      out.push("Akun uang masuk dan akun pendapatan tidak boleh sama.");
     }
 
     if (Number(cogsTotal) > 0) {
-      if (!accountExists(accounts, m.__cogs)) out.push("Akun HPP belum dipilih.");
-      if (!accountExists(accounts, m.__inventory)) out.push("Akun persediaan belum dipilih.");
+      if (!accountExists(accounts, m.__cogs)) out.push("Akun harga modal belum dipilih.");
+      if (!accountExists(accounts, m.__inventory)) out.push("Akun stok barang belum dipilih.");
       if (accountExists(accounts, m.__cogs) && accountExists(accounts, m.__inventory) &&
           ERP.idEqual(m.__cogs, m.__inventory)) {
-        out.push("Akun HPP dan akun persediaan tidak boleh sama.");
+        out.push("Akun harga modal dan akun stok barang tidak boleh sama.");
       }
     }
 
@@ -152,21 +152,21 @@ window.PosERP = (function () {
     const m = map || {};
     const list = methods || METHODS;
 
-    if (!accountExists(accounts, m.__revenue)) out.push("Akun pendapatan belum dipilih.");
+    if (!accountExists(accounts, m.__revenue)) out.push("Akun pendapatan penjualan belum dipilih.");
     list.forEach(function (method) {
       if (!accountExists(accounts, m[method])) {
-        out.push("Akun debit metode " + method + " belum dipilih.");
+        out.push("Uang masuk lewat " + method + " belum dipilih akunnya.");
       } else if (accountExists(accounts, m.__revenue) && ERP.idEqual(m[method], m.__revenue)) {
-        out.push("Akun debit metode " + method + " sama dengan akun pendapatan.");
+        out.push("Akun uang masuk lewat " + method + " sama dengan akun pendapatan.");
       }
     });
 
     if (hasCost) {
-      if (!accountExists(accounts, m.__cogs)) out.push("Akun HPP belum dipilih (HPP belum bisa dicatat).");
-      if (!accountExists(accounts, m.__inventory)) out.push("Akun persediaan belum dipilih (HPP belum bisa dicatat).");
+      if (!accountExists(accounts, m.__cogs)) out.push("Akun harga modal belum dipilih (harga modal belum bisa dicatat).");
+      if (!accountExists(accounts, m.__inventory)) out.push("Akun stok barang belum dipilih (harga modal belum bisa dicatat).");
       if (accountExists(accounts, m.__cogs) && accountExists(accounts, m.__inventory) &&
           ERP.idEqual(m.__cogs, m.__inventory)) {
-        out.push("Akun HPP dan akun persediaan tidak boleh sama.");
+        out.push("Akun harga modal dan akun stok barang tidak boleh sama.");
       }
     }
     return out;
@@ -287,6 +287,63 @@ window.PosERP = (function () {
     };
   }
 
+  /* ---------- TULIS JURNAL KAS ----------
+     Pemasukan, pengeluaran, modal, prive, bayar utang, dan
+     terima piutang memakai tabel transactions yang sama.
+     Satu entri = satu baris jurnal. Stok tidak disentuh. */
+
+  function requireCash() {
+    if (!window.CashCore) {
+      throw new Error("Bagian catat uang belum termuat. Muat ulang halaman.");
+    }
+    return window.CashCore;
+  }
+
+  function cashPosted(sourceId, businessId) {
+    requireERP();
+    if (!sourceId) return false;
+    return ERP.getActiveTransactions().some(function (t) {
+      if (String(t.sourceId || "") !== String(sourceId)) return false;
+      if (t.source !== "catatin-kas") return false;
+      return businessId ? ERP.idEqual(t.businessId, businessId) : true;
+    });
+  }
+
+  async function postCash(businessId, entry) {
+    requireERP();
+    const built = requireCash().buildEntry(businessId, entry, new Date().toISOString());
+    if (!built.ok) {
+      return { ok: false, duplicate: false, errors: built.errors };
+    }
+
+    // Segarkan cache dulu supaya pemeriksaan duplikat tidak memakai data lama.
+    await ERP.syncTransactions();
+
+    if (cashPosted(entry.id, businessId)) {
+      return { ok: true, duplicate: true, errors: [] };
+    }
+
+    await ERP.createTransactionsRemote(businessId, [built.row], { dedupeReferences: true });
+
+    return { ok: true, duplicate: false, errors: [] };
+  }
+
+  // Entri kas yang sudah tercatat, terbaru lebih dulu.
+  function cashEntries(businessId) {
+    requireERP();
+    return ERP.getActiveTransactions()
+      .filter(function (t) {
+        if (t.source !== "catatin-kas") return false;
+        return businessId ? ERP.idEqual(t.businessId, businessId) : true;
+      })
+      .slice()
+      .sort(function (a, b) {
+        const byDate = String(b.date || "").localeCompare(String(a.date || ""));
+        if (byDate) return byDate;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      });
+  }
+
   return {
     METHODS: METHODS,
     MAP_KEY: MAP_KEY,
@@ -300,6 +357,9 @@ window.PosERP = (function () {
     loadCatalog: loadCatalog,
     syncERP: syncERP,
     postSale: postSale,
-    isPosted: isPosted
+    isPosted: isPosted,
+    postCash: postCash,
+    cashPosted: cashPosted,
+    cashEntries: cashEntries
   };
 })();
