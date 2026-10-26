@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Masuk — Kasir Catat.in</title>
+<meta name="description" content="Masuk ke Kasir Catat.in dengan akun Ilham ERP.">
+<meta name="theme-color" content="#12305c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Catat.in">
+<style>
+:root{--n:#12305c;--b:#2f7de1;--bg:#f5f7fb;--l:#e1e7f0;--t:#1b2433;--m:#5d6b82;--r:#c0392b;--g:#1d8a52}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;font:16px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--t);background:var(--bg)}
+.card{width:100%;max-width:420px;background:#fff;border:1px solid var(--l);border-radius:14px;padding:22px}
+.logo{font-size:1.8rem;font-weight:700;color:var(--n);margin-bottom:4px}.logo b{color:var(--b)}
+h1{font-size:1.35rem;margin:.2em 0 .4em}label{display:block;font-size:.9rem;color:var(--m);margin:10px 0 3px}
+input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;background:#fff;font:inherit}
+input:focus{outline:2px solid var(--b);outline-offset:1px}
+.btn{display:inline-block;background:var(--b);color:#fff;border:0;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600;text-decoration:none;text-align:center}
+.btn.s{background:#fff;color:var(--n);border:1px solid #b9c5d8}.btn:disabled{opacity:.5;cursor:wait}
+.err{color:var(--r);font-size:.9rem;margin:8px 0;min-height:1px;white-space:pre-wrap}.ok{color:var(--g);font-size:.9rem;margin:8px 0}
+.mut{color:var(--m);font-size:.9rem}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.show{display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--m);font-size:.9rem}.show input{width:auto;min-height:0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">catat<b>.in</b></div>
+  <h1 id="title">Masuk ke Kasir</h1>
+  <p class="mut">Gunakan akun Ilham ERP yang sama. Kasir membaca usaha, COA, produk, dan resep dari akun itu.</p>
+  <form id="form" novalidate>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" inputmode="email" required>
+    <label for="password">Kata sandi</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <label class="show"><input type="checkbox" id="show"> Tampilkan kata sandi</label>
+    <div class="err" id="message" role="alert"></div>
+    <button class="btn" id="submit" type="submit" style="width:100%">Masuk</button>
+  </form>
+  <p class="mut" style="text-align:center;margin-top:16px">Belum punya akun? <a href="https://accountingilhamv1.github.io/Ilhamoke/login.html">Daftar di Ilham ERP</a></p>
+  <p class="mut" style="text-align:center"><a href="https://accountingilhamv1.github.io/Ilhamoke/">Buka ERP</a></p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/auth.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("form");
+  var email = document.getElementById("email");
+  var password = document.getElementById("password");
+  var show = document.getElementById("show");
+  var submit = document.getElementById("submit");
+  var message = document.getElementById("message");
+
+  function setMessage(text, ok) {
+    message.textContent = text || "";
+    message.className = ok ? "ok" : "err";
+  }
+
+  function goNext() {
+    location.replace(ERPAuth.nextFromUrl());
+  }
+
+  show.addEventListener("change", function () {
+    password.type = show.checked ? "text" : "password";
+  });
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    setMessage("");
+    var mail = email.value.trim();
+    var pass = password.value;
+    if (!mail || !pass) return setMessage("Isi email dan kata sandi terlebih dahulu.");
+    if (navigator.onLine === false) return setMessage("Tidak ada koneksi internet. Sambungkan internet untuk masuk.");
+
+    submit.disabled = true;
+    submit.textContent = "Memproses...";
+    var result = await ERPAuth.signIn(mail, pass);
+    if (!result.ok) {
+      submit.disabled = false;
+      submit.textContent = "Masuk";
+      return setMessage(result.message);
+    }
+    submit.textContent = "Berhasil. Membuka kasir...";
+    goNext();
+  });
+
+  ERPAuth.getSession().then(function (session) {
+    if (session) goNext();
+  });
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(function (error) {
+    console.warn("Service worker gagal dipasang:", error);
+  });
+}
+</script>
+</body>
+</html>
