@@ -118,9 +118,42 @@ function importLegacy(){const old=legacyDb();if(!old||!Array.isArray(old.txs))re
   save();render();toast(n+' transaksi lama disalin.')}
 function skipLegacy(){const old=legacyDb();if(!old)return;old.importedTo=old.importedTo||{};old.importedTo[storeKey()]=new Date().toISOString();try{localStorage.setItem(K,JSON.stringify(old))}catch(e){}render()}
 /* DASHBOARD */
+let sumP='today';
+function shiftYmd(s,n){const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return dstr(d)}
+/* Ringkasan dari data ERP (semua perangkat). Hanya membaca transaksi berstatus posted
+   yang sudah ada di ERP; tidak membuat jurnal, HPP, atau stok baru. Cara hitung sama dengan bot Telegram. */
+function erpSummary(p,today){
+  today=today||dstr(new Date());let a=today,b=today;
+  if(p==='yday'){a=b=shiftYmd(today,-1)}else if(p==='week'){a=shiftYmd(today,-6)}
+  const kind=new Map(),hpp=new Set(),cash=new Set();
+  accounts.forEach(x=>{const id=String(x.id),nm=String(x.name||'').toLowerCase().replace(/^[-*\s]+/,'');
+    if(ERP.REVENUE_GROUPS.includes(x.group))kind.set(id,'p');
+    else if(ERP.EXPENSE_GROUPS.includes(x.group)){kind.set(id,'b');if(/^harga pokok penjualan/.test(nm))hpp.add(id)}
+    if(x.isCash)cash.add(id)});
+  let revenue=0,count=0,cogs=0,expense=0,kas=0;
+  ERP.getActiveTransactions().forEach(t=>{
+    const amt=Number(t.amount)||0,d=String(t.debitAccountId),c=String(t.creditAccountId);
+    if(cash.has(d))kas+=amt;if(cash.has(c))kas-=amt;
+    if(!(t.date>=a&&t.date<=b))return;
+    if(kind.get(c)==='p'){revenue+=amt;count++}
+    if(kind.get(d)==='p')revenue-=amt;
+    if(kind.get(d)==='b'){if(hpp.has(d))cogs+=amt;else expense+=amt}
+    if(kind.get(c)==='b'){if(hpp.has(c))cogs-=amt;else expense-=amt}});
+  const gross=revenue-cogs;
+  return {from:a,to:b,revenue,count,cogs,expense,gross,net:gross-expense,kas,noCost:cogs===0&&revenue>0};
+}
+function sumSet(p){sumP=p;render()}
+function sumCard(){let s;try{s=erpSummary(sumP)}catch(e){return ''}
+  const ttl={today:'hari ini',yday:'kemarin',week:'7 hari terakhir'}[sumP]||'hari ini',
+    btn=(k,t)=>`<button class="btn ${sumP===k?'':'s'} sm" onclick="sumSet('${k}')">${t}</button>`,
+    line=(t,v)=>`<div class="row sp"><span>${t}</span><b>${v}</b></div>`;
+  return `<div class="card"><h2>Ringkasan ${ttl}</h2><div class="row" style="margin-bottom:8px">${btn('today','Hari ini')}${btn('yday','Kemarin')}${btn('week','7 hari')}</div>`+
+    line('Penjualan ('+s.count+' transaksi)',rp(s.revenue))+line('Modal produk',s.noCost?'belum tercatat':rp(s.cogs))+line('Untung kotor',rp(s.gross))+line('Biaya usaha',rp(s.expense))+line('Untung bersih',rp(s.net))+line('Uang kas &amp; bank',rp(s.kas))+
+    (s.noCost?'<p class="mut">Modal produk belum tercatat, jadi untungnya belum pasti.</p>':'')+
+    '<p class="mut">Dihitung dari data di ERP, jadi menyatukan semua perangkat.</p></div>'}
 function dash(){const t=dstr(new Date()),tx=db.txs.filter(x=>x.date===t&&!x.void),sum=tx.reduce((a,x)=>a+x.total,0),act=catalog.filter(p=>p.active).length;
   return `<div class="row sp"><h1>Beranda</h1><button class="btn" onclick="go('pos')">Mulai transaksi</button></div><p class="mut" style="margin-top:-6px">${esc(db.biz.name)}${erpUser&&erpUser.email?' · '+esc(erpUser.email):''}</p>${installCard()}${legacyBanner()}${catalogCachedAt?`<div class="warn">Katalog sedang memakai salinan terakhir (${esc(String(catalogCachedAt).slice(0,10))}) karena server belum bisa dihubungi. Harga dan harga modal bisa berubah di Ilham ERP.</div>`:''}
-<div class="grid"><div class="card stat w"><small>Omzet hari ini (bukan laba)</small><div>${rp(sum)}</div></div><div class="card stat"><small>Transaksi lokal hari ini</small><div>${tx.length}</div></div><div class="card stat"><small>Rata-rata</small><div>${rp(tx.length?Math.round(sum/tx.length):0)}</div></div><div class="card stat"><small>Produk aktif di ERP</small><div>${act}</div></div></div>
+${sumCard()}<div class="grid"><div class="card stat w"><small>Omzet hari ini di perangkat ini (bukan laba)</small><div>${rp(sum)}</div></div><div class="card stat"><small>Transaksi lokal hari ini</small><div>${tx.length}</div></div><div class="card stat"><small>Rata-rata</small><div>${rp(tx.length?Math.round(sum/tx.length):0)}</div></div><div class="card stat"><small>Produk aktif di ERP</small><div>${act}</div></div></div>
 <div class="card"><div class="row sp"><h2>Transaksi terbaru</h2><a href="#history">Lihat semua</a></div>${txTable(db.txs.slice(-5).reverse())}</div>
 <div class="mut">Penjualan langsung tersimpan sebagai catatan di Ilham ERP. Stok bahan tidak berubah otomatis.</div>`}
 function txTable(a,m){if(!a.length)return '<p class="mut">Belum ada transaksi. Mulai dari halaman Kasir.</p>';
@@ -198,50 +231,70 @@ function hrows(){return txTable(db.txs.filter(x=>x.id.toLowerCase().includes(hf.
 function hl(){$('hl').innerHTML=hrows()}
 /* UANG MASUK & KELUAR */
 let kf={type:'masuk',date:'',debit:'',credit:''};
+let kAuto=null,kTimer=null;
+const KAS_MAP={modal:'modal',prive:'prive',bayar_utang:'bayar_utang',terima_piutang:'terima_piutang',pemasukan:'masuk',beli:'keluar'};
 function accName(id){return accounts.find(a=>ERP.idEqual(a.id,id))||null}
 function kasTypeDef(){return (window.CashCore&&CashCore.typeOf(kf.type))||(window.CashCore?CashCore.TYPES[0]:null)}
 function kasInit(){if(!kf.date)kf.date=dstr(new Date());if(!window.CashCore)return;const g=CashCore.guessAccounts(accounts,kf.type);if(!kf.debit)kf.debit=g.debit;if(!kf.credit)kf.credit=g.credit}
 function kasOptions(role,selected){const all=accounts.slice().sort((a,b)=>String(a.code).localeCompare(String(b.code),undefined,{numeric:true})),inRole=all.filter(a=>CashCore.matchRole(a,role)),rest=all.filter(a=>!CashCore.matchRole(a,role)),opt=a=>`<option value="${a.id}" ${ERP.idEqual(a.id,selected)?'selected':''}>${esc(a.code)} - ${esc(a.name)}</option>`;
   return `<option value="">-- Pilih akun --</option>`+(inRole.length?`<optgroup label="Disarankan">${inRole.map(opt).join('')}</optgroup>`:'')+(rest.length?`<optgroup label="Akun lain">${rest.map(opt).join('')}</optgroup>`:'')}
-function kasType(id){const t=window.CashCore?CashCore.typeOf(id):null;kf.type=t?t.id:'masuk';if(window.CashCore){const g=CashCore.guessAccounts(accounts,kf.type);kf.debit=g.debit;kf.credit=g.credit}render()}
+function kasType(id){const t=window.CashCore?CashCore.typeOf(id):null;if(!window.CashCore)return;kf.type=t?t.id:'masuk';const def=CashCore.typeOf(kf.type),g=CashCore.guessAccounts(accounts,kf.type);kf.debit=g.debit;kf.credit=g.credit;
+  const d=$('kdebit'),c=$('kcredit'),ld=$('klabeld'),lc=$('klabelc'),nt=$('ktypenote');
+  if(d)d.innerHTML=kasOptions(def.debitRole,kf.debit);if(c)c.innerHTML=kasOptions(def.creditRole,kf.credit);
+  if(ld)ld.textContent=def.debitLabel;if(lc)lc.textContent=def.creditLabel;if(nt)nt.textContent=def.note;
+  kasPrev()}
 function kasPrev(){const e=$('kprev');if(!e||!window.CashCore)return;const t=kasTypeDef(),d=accName($('kdebit')?$('kdebit').value:''),c=accName($('kcredit')?$('kcredit').value:''),a=num($('kamount')?$('kamount').value:''),same=d&&c&&ERP.idEqual(d.id,c.id);
   e.className=same?'err':'mut';
   e.innerHTML=same?'Pilihan akunnya tidak boleh sama.':`${esc(t.debitLabel)} <b>${esc(d?d.code+' '+d.name:'—')}</b><br>${esc(t.creditLabel)} <b>${esc(c?c.code+' '+c.name:'—')}</b>${a?`<br>Jumlah <b>${rp(a)}</b>`:''}`}
-function kasParse(){const box=$('kparse'),t=$('ktext')?$('ktext').value.trim():'';if(!box||!window.CashCore)return;
-  if(!t){box.innerHTML='<div class="err">Tulis dulu transaksinya.</div>';return}
-  if(!window.TxParser){box.innerHTML='<div class="err">Pembaca teks tidak termuat. Isi sendiri di bawah ini.</div>';return}
-  let p;try{p=TxParser.parse(t,accounts,{today:new Date()})}catch(e){box.innerHTML='<div class="err">'+esc(String((e&&e.message)||e))+'</div>';return}
-  if(p.kind==='jual'){box.innerHTML='<div class="warn">Ini terlihat seperti <b>penjualan</b>. Pakai halaman <a href="#pos">Kasir</a> supaya rincian barang dan harga modalnya ikut tercatat.</div>';return}
-  const map={modal:'modal',prive:'prive',bayar_utang:'bayar_utang',terima_piutang:'terima_piutang',pemasukan:'masuk',beli:'keluar'},type=map[p.kind];
-  if(!p.ok||!type){box.innerHTML=`<div class="warn"><b>Belum lengkap.</b> ${esc((p.missing||[]).join(', ')||'datanya')} belum dikenali. Lengkapi di isian bawah.</div>`;return}
-  kf.type=type;kf.date=p.date;kf.debit=p.debit?p.debit.id:'';
-  kf.credit=p.credit?p.credit.id:'';const g=CashCore.guessAccounts(accounts,type);
+function kasMsg(t){const e=$('km')||$('kmsg')||$('m');if(e)e.textContent=t}
+function kasSync(){const set=(id,v)=>{const e=$(id);if(e&&v)e.value=v};set('ktype',kf.type);set('kdate',kf.date);set('kdebit',kf.debit);set('kcredit',kf.credit);kasPrev()}
+/* Baca tulisan bebas pakai mesin yang sama dengan bot Telegram. */
+function kasParse(){const box=$('kparse'),t=$('ktext')?$('ktext').value.trim():'';kAuto=null;if(!box||!window.CashCore)return null;
+  if(!t){box.innerHTML='<div class="err">Tulis dulu, misalnya “beli galon 20rb”.</div>';return null}
+  if(!window.TxParser){box.innerHTML='<div class="err">Pembaca teks tidak termuat. Isi sendiri di bawah ini.</div>';return null}
+  let p;try{p=TxParser.parse(t,accounts,{today:new Date()})}catch(e){box.innerHTML='<div class="err">'+esc(String((e&&e.message)||e))+'</div>';return null}
+  if(p.kind==='jual'){box.innerHTML='<div class="warn">Ini terlihat seperti <b>penjualan</b>. Pakai halaman <a href="#pos">Kasir</a> supaya rincian barang dan harga modalnya ikut tercatat.</div>';return null}
+  const type=KAS_MAP[p.kind];
+  kf.type=type||kf.type;kf.date=p.date||dstr(new Date());
+  kf.debit=p.debit?p.debit.id:'';kf.credit=p.credit?p.credit.id:'';
+  const g=CashCore.guessAccounts(accounts,kf.type);
   if(!kf.debit)kf.debit=g.debit;if(!kf.credit)kf.credit=g.credit;
-  render();
-  const am=$('kamount');if(am)am.value=fmt(p.amount);
+  const am=$('kamount');if(am&&p.amount)am.value=fmt(p.amount);
   const nt=$('knote');if(nt&&!nt.value)nt.value=t;
-  const def=CashCore.typeOf(type),b2=$('kparse');
-  if(b2)b2.innerHTML=`<div class="ok">Terbaca: ${esc(def?def.label:'')} · ${rp(p.amount)} · ${esc(p.date)}</div>`+(p.notes||[]).map(n=>`<div class="mut">${esc(plain(n))}</div>`).join('');
-  const tt=$('ktext');if(tt)tt.value='';kasPrev()}
+  kasSync();
+  if(!p.ok||!type){box.innerHTML=`<div class="warn"><b>Belum lengkap.</b> ${esc(plain((p.missing||[]).join(', ')||'Datanya'))} belum terbaca otomatis. <button class="btn s" style="margin-top:6px" onclick="kasManual()">Isi sendiri</button></div>`;return null}
+  const def=CashCore.typeOf(type),d=p.debit,c=p.credit;
+  box.innerHTML=`<div class="ok"><b>Terbaca: ${esc(def.label)}</b> · ${rp(p.amount)} · ${esc(p.date)}</div><div class="mut">${esc(def.debitLabel)} <b>${esc(d.code+' '+d.name)}</b><br>${esc(def.creditLabel)} <b>${esc(c.code+' '+c.name)}</b></div><div class="mut">Akun dipilih otomatis, tidak perlu diisi.</div>`+(p.notes||[]).map(n=>`<div class="mut">${esc(plain(n))}</div>`).join('');
+  kAuto={p,type};return kAuto}
+function kasLive(){kAuto=null;clearTimeout(kTimer);kTimer=setTimeout(()=>{kasParse()},350)}
+function kasManual(){const d=$('kmanual');if(d)d.open=true;const a=$('kamount');if(a)a.focus()}
+async function kasGo(){if(saving)return;if(!onlineNow())return kasMsg('Tidak ada koneksi internet. Catatan belum tersimpan.');
+  const t=$('ktext')?$('ktext').value.trim():'';
+  if(!t)return kasMsg('Tulis dulu, misalnya “beli galon 20rb”.');
+  const r=(kAuto&&kAuto.p)?kAuto:kasParse();
+  if(!r){kasManual();return}
+  return kasWrite({type:r.type,date:r.p.date,amount:r.p.amount,note:r.p.description||t,debitAccountId:r.p.debit.id,creditAccountId:r.p.credit.id,take:true})}
 function kasList(list){if(!list.length)return '<p class="mut">Belum ada catatan uang masuk atau keluar.</p>';
   return list.slice(0,20).map(t=>{const desc=String(t.description||'').replace(/^Kasir:\s*/,'');
     return `<div class="li" style="cursor:default"><div><b>${rp(t.amount)}</b><div class="mut">${esc(t.date)} · ${esc(desc)}</div></div></div>`}).join('')+'<p class="mut" style="margin-top:8px">Catatan yang sudah tersimpan tidak bisa diubah dari kasir. Kalau ada yang salah, betulkan di Ilham ERP.</p>'}
 function kasPage(){if(!window.CashCore)return '<h1>Uang Masuk &amp; Keluar</h1><div class="card"><div class="err">Bagian catat uang belum termuat. Muat ulang halaman.</div></div>';kasInit();
   const t=kasTypeDef(),list=PosERP.cashEntries(erpBiz.id);
   return `<div class="row sp"><h1>Uang Masuk &amp; Keluar</h1><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/journal.html">Lihat catatan di ERP</a></div>
-<p class="mut">Catat uang yang masuk atau keluar selain dari penjualan. Catatan langsung tersimpan di Ilham ERP. Stok barang tidak berubah.</p>
+<p class="mut">Catat uang yang masuk atau keluar selain dari penjualan. Pilihannya otomatis, jadi tidak perlu mengisi akun. Stok barang tidak berubah.</p>
 <div class="card"><h2>Tulis cepat</h2><p class="mut" style="margin:4px 0 8px">Tulis seperti chat, misalnya “terima 500rb jasa servis”, “beli galon 20rb”, atau “tambah modal 2jt”.</p>
-<textarea id="ktext" rows="2" style="width:100%;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;font:inherit" placeholder="Tulis di sini…"></textarea>
-<div class="row" style="margin-top:8px"><button class="btn s" onclick="kasParse()">Baca</button></div><div id="kparse" style="margin-top:6px"></div></div>
-<div class="card"><h2>Isi sendiri</h2><label>Jenis catatan</label><select id="ktype" onchange="kasType(this.value)">${CashCore.TYPES.map(x=>`<option value="${x.id}" ${x.id===kf.type?'selected':''}>${esc(x.label)}</option>`).join('')}</select>
-<p class="mut" style="margin:6px 0 0">${esc(t.note)}</p>
+<textarea id="ktext" rows="2" style="width:100%;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;font:inherit" placeholder="Tulis di sini…" oninput="kasLive()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();kasGo()}"></textarea>
+<div class="row" style="margin-top:8px"><button class="btn" id="kgo" onclick="kasGo()">Simpan</button><span class="mut" style="align-self:center">Akun dipilih otomatis. Tekan Enter untuk simpan.</span></div><div id="kparse" style="margin-top:6px"></div><div class="err" id="kmsg"></div></div>
+<details class="card" id="kmanual"><summary><b>Isi sendiri</b> — kalau tulisannya tidak terbaca</summary>
+<p class="mut" style="margin:6px 0 0">Bagian ini hanya untuk keadaan darurat. Akun bisa dipilih sendiri di sini.</p>
+<label>Jenis catatan</label><select id="ktype" onchange="kasType(this.value)">${CashCore.TYPES.map(x=>`<option value="${x.id}" ${x.id===kf.type?'selected':''}>${esc(x.label)}</option>`).join('')}</select>
+<p class="mut" style="margin:6px 0 0" id="ktypenote">${esc(t.note)}</p>
 <div class="row" style="margin-top:4px"><div style="flex:1;min-width:140px"><label>Tanggal</label><input type="date" id="kdate" value="${esc(kf.date)}" onchange="kasPrev()"></div><div style="flex:1;min-width:140px"><label>Jumlah (Rp)</label><input id="kamount" inputmode="numeric" autocomplete="off" oninput="mask(this);kasPrev()"></div></div>
 <label>Catatan</label><input id="knote" placeholder="Misalnya: jasa servis AC" maxlength="120">
-<label>${esc(t.debitLabel)}</label><select id="kdebit" onchange="kasPrev()">${kasOptions(t.debitRole,kf.debit)}</select>
-<label>${esc(t.creditLabel)}</label><select id="kcredit" onchange="kasPrev()">${kasOptions(t.creditRole,kf.credit)}</select>
+<label id="klabeld">${esc(t.debitLabel)}</label><select id="kdebit" onchange="kasPrev()">${kasOptions(t.debitRole,kf.debit)}</select>
+<label id="klabelc">${esc(t.creditLabel)}</label><select id="kcredit" onchange="kasPrev()">${kasOptions(t.creditRole,kf.credit)}</select>
 <div id="kprev" class="mut" style="margin-top:10px"></div>
 <div class="err" id="m"></div>
-<div class="row" style="margin-top:10px"><button class="btn" onclick="kasConfirm()">Simpan catatan</button></div></div>
+<div class="row" style="margin-top:10px"><button class="btn" onclick="kasConfirm()">Simpan catatan</button></div></details>
 <div class="card"><h2>Catatan terakhir</h2>${kasList(list)}</div>`}
 function kasConfirm(){if(!window.CashCore)return;if(!onlineNow())return setM('Tidak ada koneksi internet. Catatan belum bisa disimpan.');
   const date=$('kdate').value,amount=num($('kamount').value),note=$('knote').value.trim(),debit=$('kdebit').value,credit=$('kcredit').value;
@@ -249,17 +302,22 @@ function kasConfirm(){if(!window.CashCore)return;if(!onlineNow())return setM('Ti
   if(!built.ok)return setM(built.errors.join(' '));
   const t=CashCore.typeOf(kf.type),d=accName(debit),c=accName(credit);
   ov(`<h2>Simpan catatan ini?</h2><p><b>${esc(t.label)}</b> · ${esc(date)} · ${rp(amount)}</p><p>${esc(t.debitLabel)} <b>${esc(d.code+' '+d.name)}</b><br>${esc(t.creditLabel)} <b>${esc(c.code+' '+c.name)}</b></p>${note?`<p class="mut">${esc(note)}</p>`:''}<div class="warn">Catatan yang sudah tersimpan tidak bisa diubah dari kasir. Stok barang tidak berubah.</div><div class="err" id="km"></div><div class="row"><button class="btn" id="kok" onclick="kasSave()">Ya, simpan</button><button class="btn s" onclick="cl()">Batal</button></div>`)}
-function kasErr(t){const e=$('km')||$('m');if(e)e.textContent=t}
-async function kasSave(){if(saving)return;if(!onlineNow())return kasErr('Tidak ada koneksi internet. Catatan belum tersimpan.');
-  const date=$('kdate').value,amount=num($('kamount').value),note=$('knote').value.trim(),debit=$('kdebit').value,credit=$('kcredit').value,b=$('kok');
-  const key='kas'+date.replace(/-/g,''),seq=((db.seq[key]||0)+1),id='KAS-'+date.replace(/-/g,'')+'-'+String(seq).padStart(4,'0');
+async function kasSave(){if(saving)return;if(!onlineNow())return kasMsg('Tidak ada koneksi internet. Catatan belum tersimpan.');
+  return kasWrite({type:kf.type,date:$('kdate').value,amount:num($('kamount').value),note:$('knote').value.trim(),debitAccountId:$('kdebit').value,creditAccountId:$('kcredit').value})}
+async function kasWrite(e){if(saving)return false;if(!onlineNow()){kasMsg('Tidak ada koneksi internet. Catatan belum tersimpan.');return false}
+  const date=e.date,amount=Number(e.amount);
+  const key='kas'+date.replace(/-/g,''),seq=((db.seq[key]||0)+1),id='KAS-'+date.replace(/-/g,'')+'-'+String(seq).padStart(4,'0'),b=$('kok')||$('kgo');
   if(b)b.disabled=true;saving=true;
-  try{const res=await PosERP.postCash(erpBiz.id,{id,type:kf.type,date:date,amount:amount,note:note,debitAccountId:debit,creditAccountId:credit});
-    if(!res.ok){kasErr((res.errors||['Catatan gagal disimpan.']).join(' '));return}
-    db.seq[key]=seq;save();kf.date=dstr(new Date());kf.debit='';kf.credit='';cl();render();
-    toast(res.duplicate?'Catatan ini sudah tersimpan di ERP.':'Catatan tersimpan di Ilham ERP.')}
-  catch(e){kasErr(ERP.friendlyError?ERP.friendlyError(e):String((e&&e.message)||e))}
-  finally{saving=false;const btn=$('kok');if(btn)btn.disabled=false}}
+  try{const res=await PosERP.postCash(erpBiz.id,{id,type:e.type,date:date,amount:amount,note:e.note,debitAccountId:e.debitAccountId,creditAccountId:e.creditAccountId});
+    if(!res.ok){kasMsg(plain((res.errors||['Catatan gagal disimpan.']).join(' ')));return false}
+    db.seq[key]=seq;save();
+    if(e.take){kAuto=null}else{kf.date=dstr(new Date());kf.debit='';kf.credit=''}
+    cl();render();
+    const t=CashCore.typeOf(e.type);
+    toast(res.duplicate?'Catatan ini sudah tersimpan di Ilham ERP.':'Tersimpan: '+(t?t.label:'Catatan')+' '+rp(amount));
+    return true}
+  catch(err){kasMsg(ERP.friendlyError?ERP.friendlyError(err):String((err&&err.message)||err));return false}
+  finally{saving=false;const btn=$('kok')||$('kgo');if(btn)btn.disabled=false}}
 
 /* CATAT TRANSAKSI LOKAL LAMA KE ERP */
 function unpostedLocal(){return db.txs.filter(x=>x&&!x.void&&!erpLocked(x))}
