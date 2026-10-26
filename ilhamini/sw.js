@@ -8,17 +8,16 @@
    Yang TIDAK dilakukan:
    - tidak menyimpan/ meniru data transaksi;
    - tidak men-cache request ke Supabase;
-   - tidak menyentuh halaman ERP di luar /ilhamini/.
+   - tidak menyentuh halaman ERP di repo lain.
    Penjualan tetap harus tersambung ke ERP untuk disimpan.
 ===================================================== */
 
-const VERSION = "2026-10-27.4";
+const VERSION = "2026-10-27.6";
 const CACHE = "catatin-pos-" + VERSION;
 
 const SW_URL = new URL(self.location.href);
 const BASE = new URL("./", SW_URL);
-const ROOT = new URL("../", SW_URL);
-const ASSETS = new URL("assets/", ROOT);
+const ASSETS = new URL("assets/", BASE);
 
 const CORE = [
   BASE.href,
@@ -28,10 +27,10 @@ const CORE = [
   new URL("icons/icon-180.png", BASE).href,
   new URL("icons/icon-192.png", BASE).href,
   new URL("icons/icon-512.png", BASE).href,
-  new URL("assets/auth.js", ROOT).href,
-  new URL("assets/sale-core.js", ROOT).href,
-  new URL("assets/app.js", ROOT).href,
-  new URL("assets/pos-erp.js", ROOT).href
+  new URL("assets/auth.js", BASE).href,
+  new URL("assets/sale-core.js", BASE).href,
+  new URL("assets/app.js", BASE).href,
+  new URL("assets/pos-erp.js", BASE).href
 ];
 
 const SUPABASE_SDK = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";

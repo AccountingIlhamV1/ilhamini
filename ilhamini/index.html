@@ -32,16 +32,16 @@ details summary{cursor:pointer;padding:4px 0;color:var(--n);font-weight:600}.flt
 .sc{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{padding:8px 6px;border-bottom:1px solid var(--l);text-align:left;white-space:nowrap}th{color:var(--m)}
 .auth{max-width:420px;margin:5vh auto;padding:0 16px}.ov{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:14px;z-index:9}.md{background:#fff;border-radius:14px;padding:18px;max-width:440px;width:100%;max-height:90vh;overflow:auto}
 input[readonly]{background:#eef2f8;color:var(--m)}.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--n);color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw}.rcpt{font-family:ui-monospace,monospace;font-size:.85rem}.rcpt hr{border:0;border-top:1px dashed #888}
-@media(min-width:800px){.hb{display:none}.top{justify-content:flex-start;gap:24px}.top nav{display:flex;position:static;flex-direction:row;width:auto;background:none;box-shadow:none;padding:0;flex:1}.top nav a:last-child{margin-left:auto}.pos{grid-template-columns:1.2fr 1fr}.grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}}
+@media(min-width:800px){.hb{display:none}.top{justify-content:flex-start;gap:24px}.top nav{display:flex;position:static;flex-direction:row;width:auto;background:none;box-shadow:none;padding:0;flex:1}.top nav a:last-child{margin-left:auto}.pos{grid-template-columns:1.2fr 1fr}.grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}}@media(min-width:1024px){main{max-width:1180px}}
 .plogo{display:block;max-width:160px;max-height:96px;margin:6px 0 8px;padding:4px;border:1px solid var(--l);border-radius:8px;background:#fff}.rlogo{display:block;margin:0 auto 6px;max-width:120px;max-height:56px}
 .pwa{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.pwa>div:first-child{flex:1;min-width:180px}.pwa .row{flex-wrap:nowrap}
 @media print{body *{visibility:hidden}.rcpt,.rcpt *{visibility:visible}.rcpt{position:absolute;left:0;top:0;width:100%}.ov{background:none}}
 </style></head><body><div id="app"></div><div id="ov"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="../assets/auth.js"></script>
-<script src="../assets/sale-core.js"></script>
-<script src="../assets/app.js"></script>
-<script src="../assets/pos-erp.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/sale-core.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/pos-erp.js"></script>
 <script>
 const K='catatin.v1',SCHEMA='1.2';
 let db=null,cart=[],pay={m:'Tunai',paid:''},saving=false,q='',pq='',hf={q:'',a:'',b:''},ex={a:'',b:''},loading=false;
@@ -78,7 +78,7 @@ function gn(k){if(location.hash==='#'+k)render();else go(k)}
 function loginPage(msg=''){$('app').innerHTML=`<div class="auth"><div class="logo" style="font-size:1.8rem;color:var(--n)">catat<b style="color:var(--b)">.in</b></div><h1>Masuk ke Kasir</h1><div class="warn">Kasir memakai akun Ilham ERP yang sama. Jika halaman tidak berpindah, buka <a href="login.html">halaman masuk</a>.</div><div class="err">${esc(msg)}</div></div>`}
 function regPage(){loginPage('Pendaftaran dilakukan di halaman masuk Ilham ERP.')}
 function logout(){if(window.ERPAuth)return ERPAuth.signOut();location.replace('login.html')}
-function noBusinessPage(){return `<div class="auth"><div class="card"><h1>Belum ada usaha</h1><p>Akun ini belum punya usaha aktif di ERP. Buat atau pilih usaha dulu.</p><p><a class="btn" href="../business.html">Buka Data Usaha</a></p><p class="mut">Setelah itu kembali ke halaman Kasir.</p></div></div>`}
+function noBusinessPage(){return `<div class="auth"><div class="card"><h1>Belum ada usaha</h1><p>Akun ini belum punya usaha aktif di ERP. Buat atau pilih usaha dulu.</p><p><a class="btn" href="https://accountingilhamv1.github.io/Ilhamoke/business.html">Buka Data Usaha</a></p><p class="mut">Setelah itu kembali ke halaman Kasir.</p></div></div>`}
 function setM(t){const e=$('m');if(e)e.textContent=t}
 /* PWA, INSTALASI, DAN STATUS KONEKSI */
 let installEvt=null,pwaInstalled=false;
@@ -124,7 +124,7 @@ function txTable(a,m){if(!a.length)return '<p class="mut">Belum ada transaksi. M
   return a.map(x=>`<div class="li" onclick="detail('${x.id}')"><div><b>${esc(x.id)}</b> ${x.void?'<span class="tag">Dibatalkan</span>':''}${x.erpPostedAt?'<span class="tag" style="background:#e6f0ff;color:#12305c">ERP</span>':''}${x.legacyLocal&&!x.erpPostedAt?' <span class="tag">Lokal</span>':''}${x.exp?' <span class="tag">Diekspor</span>':''}<div class="mut">${x.date} ${x.time} · ${x.items.reduce((s,i)=>s+i.qty,0)} item · ${esc(x.method)}</div></div><div class="row" style="flex-wrap:nowrap"><b ${x.void?'style="text-decoration:line-through;color:var(--m)"':''}>${rp(x.total)}</b>${m?`<button class="btn s sm" aria-label="Tindakan transaksi" onclick="event.stopPropagation();txmenu('${x.id}')">⋯</button>`:''}</div></div>`).join('')}
 /* KATALOG (dari ERP) */
 function products(){const f=pq.toLowerCase(),a=catalog.filter(p=>(p.name+p.code).toLowerCase().includes(f));
-  return `<div class="row sp"><h1>Katalog</h1><a class="btn s" href="../products.html">Kelola di ERP</a></div>
+  return `<div class="row sp"><h1>Katalog</h1><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/products.html">Kelola di ERP</a></div>
 <p class="mut">Produk, bahan, resep, dan HPP diatur di ERP. Kasir hanya membaca katalog dan tidak mengubah stok.</p>
 <input id="ps" type="search" placeholder="Cari nama atau kode produk" value="${esc(pq)}" oninput="pq=this.value;render();const e=$('ps');e.focus();e.setSelectionRange(pq.length,pq.length)">
 <div class="card" style="margin-top:12px">${a.length?a.map(p=>`<div class="li" style="cursor:default"><div><b>${esc(p.name)}</b><div class="mut">${esc(p.code)}</div><div>${rp(p.price)} · ${p.cost==null?'<span class="mut">modal belum diisi</span>':'modal '+rp(p.cost)} · <span class="ok">Aktif</span></div></div></div>`).join(''):'<p class="mut">Belum ada produk aktif di ERP. Tambahkan produk dan resep di halaman Bahan & Produk ERP.</p>'}</div>`}
@@ -249,7 +249,7 @@ function setup(){if(!erpBiz)return noBusinessPage();const businesses=ERP.getBusi
 function saveSetup(){const map={};PosERP.METHODS.concat(['__revenue','__cogs','__inventory']).forEach(k=>{const e=$('map-'+k);if(e)map[k]=e.value});PosERP.saveMapping(erpBiz.id,map);mapping=map;toast('Pemetaan disimpan.');render()}
 async function switchBusiness(id){if(!id||id===erpBiz.id)return;if(cart.length&&!confirm('Ganti usaha akan mengosongkan keranjang. Lanjutkan?')){render();return}cart=[];booting=true;bootError='';render();try{await loadBusiness(id)}catch(e){bootError=ERP.friendlyError?ERP.friendlyError(e):String((e&&e.message)||e);booting=false;render()}}
 /* PROFIL */
-function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">Akun ERP: <b>${esc(erpUser&&erpUser.email||'-')}</b></p><p class="mut">ID usaha: <b>${esc(b.id||'-')}</b></p><label>Logo usaha (opsional, hanya untuk struk)</label><div id="lbox">${lview()}</div><input type="file" id="bl" accept="image/*" onchange="lupload(this)"><div class="mut">Tampil di struk. Gambar dikecilkan otomatis.</div><h2 style="margin-top:14px">${esc(b.name)}</h2><p class="mut">${esc(b.addr||'Alamat belum diisi di ERP.')}</p><div class="row"><a class="btn s" href="../business.html">Ubah data usaha di ERP</a><a class="btn s" href="../accounts.html">Buka COA</a></div></div><div class="warn">Nama, alamat, produk, bahan, dan akun diatur di ERP. Kasir tidak mengubah stok.</div>`}
+function profile(){const b=db.biz;return `<h1>Profil usaha</h1><div class="card"><p class="mut">Akun ERP: <b>${esc(erpUser&&erpUser.email||'-')}</b></p><p class="mut">ID usaha: <b>${esc(b.id||'-')}</b></p><label>Logo usaha (opsional, hanya untuk struk)</label><div id="lbox">${lview()}</div><input type="file" id="bl" accept="image/*" onchange="lupload(this)"><div class="mut">Tampil di struk. Gambar dikecilkan otomatis.</div><h2 style="margin-top:14px">${esc(b.name)}</h2><p class="mut">${esc(b.addr||'Alamat belum diisi di ERP.')}</p><div class="row"><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/business.html">Ubah data usaha di ERP</a><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/accounts.html">Buka COA</a></div></div><div class="warn">Nama, alamat, produk, bahan, dan akun diatur di ERP. Kasir tidak mengubah stok.</div>`}
 function okLogo(l){return typeof l==='string'&&/^data:image\/(png|jpeg|webp|gif);base64,/.test(l)}
 function lview(){const l=db.biz.logo;return okLogo(l)?`<img class="plogo" src="${l}" alt="Logo usaha"><button class="btn s sm" type="button" onclick="ldel()">Hapus logo</button>`:'<div class="mut">Belum ada logo.</div>'}
 function lupload(el){const f=el.files&&el.files[0];if(!f)return;
