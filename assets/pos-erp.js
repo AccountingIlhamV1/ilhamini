@@ -535,6 +535,87 @@ window.PosERP = (function () {
       });
   }
 
+  /* ---------- BELI BAHAN DARI FOTO NOTA ----------
+     Sama seperti bot Telegram: satu jurnal untuk total nota,
+     lalu harga dan stok bahan yang cocok diperbarui.
+     nota = { id, date, method, merchant, total, items:[{name, qty, price, matId, matName, matUnit}] }
+     options.force = true melewati peringatan nota kembar.
+     Hasil: { ok, duplicate, needConfirm, errors, warnings, lines, skipped } */
+
+  function localYmd(d) {
+    const p2 = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+  }
+
+  async function postNota(businessId, nota, mapping, options) {
+    requireERP();
+    const n = nota || {};
+    const accounts = ERP.getActiveAccounts();
+    const result = { ok: false, duplicate: false, needConfirm: false, errors: [], warnings: [], lines: [], skipped: [], date: "", desc: "" };
+
+    const problems = purchaseProblems(mapping, accounts, n.method, businessId);
+    if (problems.length) { result.errors = problems; return result; }
+
+    const amount = Math.round(Number(n.total));
+    if (!(amount > 0)) { result.errors = ["Total nota tidak terbaca. Isi total dulu."]; return result; }
+
+    const today = localYmd(new Date());
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(String(n.date || "")) && String(n.date) <= today ? String(n.date) : today;
+    const desc = ("Beli bahan (nota)" + (n.merchant ? ": " + n.merchant : "")).slice(0, 200);
+    result.date = day;
+    result.desc = desc;
+
+    const debit = purchaseAccount(accounts);
+    const creditId = mapping[n.method];
+    if (ERP.idEqual(debit.id, creditId)) { result.errors = ["Akun persediaan dan akun uang tidak boleh sama."]; return result; }
+
+    await ERP.syncTransactions();
+    if (purchasePosted(n.id, businessId)) { result.ok = true; result.duplicate = true; return result; }
+
+    if (!(options && options.force)) {
+      const same = ERP.getActiveTransactions().some(function (t) {
+        return ERP.idEqual(t.businessId, businessId) && t.date === day &&
+          Number(t.amount) === amount && String(t.description || "") === desc;
+      });
+      if (same) { result.needConfirm = true; return result; }
+    }
+
+    await ERP.createTransactionsRemote(businessId, [{
+      date: day,
+      invoice: n.id,
+      description: desc,
+      amount: amount,
+      debitAccountId: debit.id,
+      creditAccountId: creditId,
+      source: PURCHASE_SOURCE,
+      sourceId: n.id
+    }], { dedupeReferences: true });
+
+    result.ok = true;
+
+    // Jurnal sudah tersimpan. Kegagalan di bawah ini hanya jadi peringatan.
+    const sb = requireClient();
+    const items = Array.isArray(n.items) ? n.items : [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (!it.matId) { result.skipped.push(String(it.name || "barang")); continue; }
+      const qty = Number(it.qty), price = Number(it.price);
+      if (!(qty > 0) || !(price >= 0)) { result.skipped.push(String(it.name || "barang")); continue; }
+      const line = { name: it.matName || it.name, unit: it.matUnit || "", unitPrice: unitPriceOf(price, qty), priceOk: false, stock: null };
+      try {
+        const up = await sb.from("materials").update({ price: line.unitPrice })
+          .eq("id", it.matId).eq("business_id", businessId).select("id");
+        line.priceOk = !up.error && !!(up.data && up.data.length);
+      } catch (e) { line.priceOk = false; }
+      try { line.stock = await addMaterialStock(businessId, it.matId, qty); } catch (e) { line.stock = null; }
+      if (!line.priceOk) result.warnings.push("Harga " + line.name + " belum berhasil diperbarui.");
+      if (!line.stock) result.warnings.push("Stok " + line.name + " belum berhasil diperbarui.");
+      result.lines.push(line);
+    }
+    if (result.warnings.length) result.warnings.push("Cek di ERP, menu Bahan & Produk.");
+    return result;
+  }
+
   return {
     METHODS: METHODS,
     MAP_KEY: MAP_KEY,
@@ -559,6 +640,7 @@ window.PosERP = (function () {
     unitPriceOf: unitPriceOf,
     postPurchase: postPurchase,
     purchasePosted: purchasePosted,
-    purchaseEntries: purchaseEntries
+    purchaseEntries: purchaseEntries,
+    postNota: postNota
   };
 })();

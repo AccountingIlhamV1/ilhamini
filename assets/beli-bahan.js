@@ -5,6 +5,7 @@
    jurnal tercatat ke ERP, harga bahan diperbarui ke harga
    beli terbaru, dan stok bahan bertambah.
    Pembayaran: Tunai / Transfer / QRIS (tanpa bayar nanti).
+   Ada juga baca foto nota (fungsi server nota-scan, Gemini).
 
    Modul ini memakai fungsi global dari index.html:
    $, esc, rp, num, mask, fmt, dstr, toast, ov, cl, setM,
@@ -88,6 +89,7 @@ function beli() {
 <p class="mut">Catat pembelian bahan baku. Jurnal tercatat otomatis, harga bahan diperbarui ke harga beli terbaru, dan stok bahan bertambah.</p>
 ${bahanList.length ? '' : '<div class="warn">Belum ada bahan di ERP. Tambahkan dulu di menu Bahan &amp; Produk, atau pilih "Bukan bahan di daftar" untuk mencatat jurnalnya saja.</div>'}
 ${accProblem.length ? `<div class="warn"><b>Pengaturan belum lengkap.</b> ${esc(accProblem.join(' '))} <a href="#setup" onclick="go('setup')">Buka Pengaturan</a></div>` : ''}
+${notaCard()}
 <div class="card">
 <label>Bahan yang dibeli</label>
 <select id="bmat" onchange="beliSet('mat',this.value)">${beliMatOptions()}</select>
@@ -202,5 +204,198 @@ async function beliSave() {
   } finally {
     saving = false;
     const b2 = $('bok'); if (b2) b2.disabled = false;
+  }
+}
+
+
+/* =====================================================
+   FOTO NOTA
+   Foto dikecilkan di browser, dikirim ke fungsi server
+   "nota-scan" (kunci Gemini ada di server), hasilnya
+   diperiksa dulu sebelum disimpan, sama seperti di bot.
+===================================================== */
+
+let nt = null, ntBusy = false, ntErr = '';
+
+function ntWords(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3);
+}
+
+function ntUnit(u) {
+  const x = String(u || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (['kg', 'kilo', 'kilogram'].includes(x)) return 'kg';
+  if (['g', 'gr', 'gram'].includes(x)) return 'g';
+  if (['l', 'lt', 'liter', 'ltr'].includes(x)) return 'l';
+  if (['bks', 'bungkus', 'pak', 'pack'].includes(x)) return 'bks';
+  return x;
+}
+
+function ntNum(v) {
+  const n = Number(v);
+  return v !== null && v !== undefined && v !== '' && isFinite(n) ? n : null;
+}
+
+/* Bahan yang paling mirip dengan nama barang di nota; null kalau tidak cukup mirip. */
+function ntMatch(name, mats) {
+  const a = ntWords(name);
+  if (!a.length) return null;
+  let best = null, bestScore = 0;
+  for (const m of mats) {
+    const b = ntWords(m.name);
+    if (!b.length) continue;
+    const common = a.filter(w => b.includes(w)).length;
+    if (!common) continue;
+    const score = common / Math.max(a.length, b.length);
+    if (score > bestScore) { best = m; bestScore = score; }
+  }
+  return bestScore >= 0.5 ? best : null;
+}
+
+/* Satu barang nota -> { name, qty, unit, price, match, status } */
+function ntItem(it, mats) {
+  const qty = ntNum(it.qty), price = ntNum(it.price_total);
+  const m = ntMatch(it.name, mats);
+  let status = 'none';
+  if (m) {
+    if (it.unit && m.unit && ntUnit(it.unit) !== ntUnit(m.unit)) status = 'unit';
+    else if (qty !== null && qty > 0 && price !== null) status = 'ok';
+    else status = 'nodata';
+  }
+  const ok = status === 'ok';
+  return {
+    name: String(it.name || '').slice(0, 60), qty, unit: it.unit || '', price,
+    matId: ok ? m.id : null, matName: ok ? m.name : null, matUnit: ok ? m.unit : null,
+    status, hint: m ? m.name : '', hintUnit: m ? m.unit : ''
+  };
+}
+
+function notaImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const M = 1600, k = Math.min(1, M / Math.max(im.width, im.height));
+      const w = Math.max(1, Math.round(im.width * k)), h = Math.max(1, Math.round(im.height * k));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(im, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1]);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Gambar tidak bisa dibuka.')); };
+    im.src = url;
+  });
+}
+
+async function notaFnError(error) {
+  try {
+    if (error && error.context && typeof error.context.json === 'function') {
+      const j = await error.context.json();
+      if (j && j.error) return String(j.error);
+    }
+  } catch (e) { /* pakai pesan bawaan */ }
+  const msg = String((error && error.message) || error || '');
+  if (/failed to fetch|network|relay/i.test(msg)) return 'Tidak bisa terhubung ke server. Periksa koneksi lalu coba lagi.';
+  return msg || 'Nota belum bisa dibaca. Coba lagi.';
+}
+
+async function notaPick(el) {
+  const f = el.files && el.files[0];
+  if (!f) return;
+  ntErr = '';
+  if (!onlineNow()) { el.value = ''; ntErr = 'Tidak ada koneksi internet. Nota belum bisa dibaca.'; render(); return; }
+  if (!/^image\//i.test(f.type)) { el.value = ''; ntErr = 'File harus berupa gambar.'; render(); return; }
+  if (f.size > 20 * 1024 * 1024) { el.value = ''; ntErr = 'Ukuran foto maksimal 20 MB.'; render(); return; }
+  ntBusy = true; render();
+  try {
+    const image = await notaImage(f);
+    const res = await ERPAuth.client.functions.invoke('nota-scan', { body: { image, mime: 'image/jpeg' } });
+    if (res.error) throw Object.assign(new Error(await notaFnError(res.error)), { shown: true });
+    const d = res.data || {};
+    if (d.error) throw Object.assign(new Error(String(d.error)), { shown: true });
+    if (!d.is_receipt) { ntErr = 'Gambar ini tidak terlihat seperti nota. Coba foto ulang.'; return; }
+    const total = ntNum(d.total);
+    if (total === null || total <= 0) { ntErr = 'Total nota tidak terbaca. Coba foto ulang dengan cahaya cukup dan nota rata.'; return; }
+    const items = (Array.isArray(d.items) ? d.items : []).slice(0, 15).map(it => ntItem(it, bahanList));
+    nt = {
+      id: 'NTA-' + dstr(new Date()).replace(/-/g, '') + '-' + uid(),
+      merchant: d.merchant ? String(d.merchant).slice(0, 60) : '',
+      date: typeof d.date === 'string' ? d.date : '',
+      total, items, method: bf.method
+    };
+  } catch (e) {
+    ntErr = (e && e.shown) ? e.message : (ERP.friendlyError ? ERP.friendlyError(e) : String((e && e.message) || e));
+  } finally {
+    ntBusy = false;
+    el.value = '';
+    if (location.hash === '#beli') render();
+  }
+}
+
+function notaCard() {
+  if (ntBusy) return '<div class="card"><h2>Foto nota</h2><p class="mut">Membaca nota, tunggu sebentar…</p></div>';
+  if (nt) return notaReview();
+  return `<div class="card"><h2>Foto nota</h2><p class="mut">Foto nota belanja bahan, lalu barang dan totalnya dibaca otomatis. Hasilnya diperiksa dulu sebelum disimpan. Harga dan stok bahan yang cocok ikut diperbarui.</p><input type="file" id="ntfile" accept="image/*" onchange="notaPick(this)"><div class="err">${esc(ntErr)}</div></div>`;
+}
+
+function notaItemHtml(it) {
+  const q = it.qty !== null ? qtyTxt2(it.qty) + (it.unit ? ' ' + esc(it.unit) : '') + ' ' : '';
+  const line = `${q}${esc(it.name)}${it.price !== null ? ' — ' + rp(it.price) : ''}`;
+  let note;
+  if (it.status === 'ok') note = `<span class="ok">cocok: ${esc(it.matName)}, harga jadi ${rp(PosERP.unitPriceOf(it.price, it.qty))} per ${esc(it.matUnit || 'satuan')}, stok +${qtyTxt2(it.qty)}</span>`;
+  else if (it.status === 'unit') note = `mirip ${esc(it.hint)}, tapi satuan beda (nota ${esc(it.unit)}, bahan ${esc(it.hintUnit)}). Stok tidak diubah.`;
+  else if (it.status === 'nodata') note = `cocok: ${esc(it.hint)}, tapi jumlah atau harga tidak terbaca. Stok tidak diubah.`;
+  else note = 'belum ada di daftar bahan. Stok tidak diubah.';
+  return `<div class="ci"><div>${line}</div><div class="mut">➜ ${note}</div></div>`;
+}
+
+function notaReview() {
+  const problems = PosERP.purchaseProblems(mapping, ERP.getActiveAccounts(), nt.method, erpBiz.id);
+  const today = dstr(new Date());
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(nt.date || '') && nt.date <= today ? nt.date : today;
+  return `<div class="card"><h2>Nota terbaca (belum disimpan)</h2>
+<p class="mut">Toko: <b>${esc(nt.merchant || 'tidak terbaca')}</b><br>Tanggal: <b>${esc(day)}</b>${day !== nt.date ? ' (tanggal nota tidak terbaca atau di masa depan, dipakai hari ini)' : ''}</p>
+${nt.items.length ? nt.items.map(notaItemHtml).join('') : '<p class="mut">Tidak ada barang yang terbaca. Hanya total yang akan dicatat.</p>'}
+<label>Total nota (Rp)</label><input id="nttotal" inputmode="numeric" autocomplete="off" value="${fmt(nt.total)}" oninput="mask(this);nt.total=num(this.value)">
+<label>Dibayar dengan</label><select onchange="nt.method=this.value;render()">${PosERP.METHODS.map(m => `<option ${nt.method === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>
+${problems.length ? `<div class="warn" style="margin-top:10px"><b>Pengaturan belum lengkap.</b> ${esc(problems.join(' '))} <a href="#setup" onclick="go('setup')">Buka Pengaturan</a></div>` : ''}
+<p class="mut">Periksa dulu. Kalau total atau barang salah, batalkan lalu foto ulang.</p>
+<div class="err" id="ntmsg"></div>
+<div class="row"><button class="btn" ${problems.length ? 'disabled' : ''} onclick="notaSave(false)">Simpan nota</button><button class="btn s" onclick="notaCancel()">Batal</button></div></div>`;
+}
+
+function notaCancel() { nt = null; ntErr = ''; render(); }
+
+async function notaSave(force) {
+  if (saving || !nt) return;
+  const msg = $('ntmsg');
+  const fail = t => { if (msg) msg.textContent = t; else toast(t); };
+  if (!onlineNow()) return fail('Tidak ada koneksi internet. Nota belum tersimpan.');
+  if (!(Number(nt.total) > 0)) return fail('Total nota harus diisi dan lebih dari 0.');
+  saving = true;
+  cl();
+  try {
+    const res = await PosERP.postNota(erpBiz.id, nt, mapping, { force: !!force });
+    if (res.needConfirm) {
+      saving = false;
+      ov(`<h2>Nota ini sudah pernah tersimpan?</h2><p>Sudah ada catatan dengan toko, tanggal, dan total yang sama (${esc(nt.merchant || 'toko tidak terbaca')}, ${esc(res.date)}, ${rp(Math.round(nt.total))}).</p><p class="mut">Kalau ini pembelian yang berbeda, pilih Tetap simpan.</p><div class="row"><button class="btn" onclick="cl();notaSave(true)">Tetap simpan</button><button class="btn s" onclick="cl()">Batal</button></div>`);
+      return;
+    }
+    if (!res.ok) return fail(plain((res.errors || ['Nota gagal disimpan.']).join(' ')));
+    const lines = [];
+    if (res.duplicate) lines.push('Nota ini sudah tersimpan di ERP.');
+    else {
+      lines.push('Nota tersimpan di ERP: ' + res.desc + ' — ' + rp(Math.round(nt.total)) + ' (' + nt.method + ').');
+      res.lines.forEach(l => lines.push('• ' + l.name + ': ' + (l.priceOk ? rp(l.unitPrice) + ' per ' + (l.unit || 'satuan') : 'harga belum berhasil diperbarui') + (l.stock ? ', stok ' + qtyTxt2(l.stock.stock) + ' ' + l.stock.unit : '')));
+      if (res.skipped.length) lines.push('Tidak mengubah stok: ' + res.skipped.join(', ') + '. Nominalnya tetap masuk total.');
+    }
+    const warn = (res.warnings || []).join(' ');
+    nt = null; ntErr = '';
+    bahanState = 'idle'; bahanAt = 0;
+    render();
+    ov(`<h2>${res.duplicate ? 'Sudah tersimpan' : 'Nota tersimpan'}</h2><p class="ok">${lines.map(esc).join('<br>')}</p>${warn ? `<div class="warn">${esc(warn)}</div>` : ''}<button class="btn" onclick="cl()">Tutup</button>`);
+  } catch (e) {
+    fail(ERP.friendlyError ? ERP.friendlyError(e) : String((e && e.message) || e));
+  } finally {
+    saving = false;
   }
 }
