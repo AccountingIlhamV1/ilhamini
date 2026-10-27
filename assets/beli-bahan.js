@@ -69,11 +69,21 @@ function beliMatOptions() {
   return `<option value="">-- Pilih bahan --</option>${opts}<option value="${NO_MAT}" ${bf.mat === NO_MAT ? 'selected' : ''}>Bukan bahan di daftar (jurnal saja)</option>`;
 }
 
+function beliDay(s) {
+  const d = new Date(String(s) + 'T00:00:00');
+  return isNaN(d) ? String(s || '') : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function beliList() {
   const list = PosERP.purchaseEntries(erpBiz.id).slice(0, 20);
   if (!list.length) return '<p class="mut">Belum ada pembelian bahan yang dicatat dari kasir.</p>';
-  return list.map(t => `<div class="li" style="cursor:default"><div><b>${rp(t.amount)}</b><div class="mut">${esc(t.date)} · ${esc(String(t.description || '').replace(/^Beli bahan:\s*/, ''))}</div></div></div>`).join('') +
-    '<p class="mut" style="margin-top:8px">Catatan yang sudah tersimpan tidak bisa diubah dari kasir. Kalau ada yang salah, betulkan di Ilham ERP.</p>';
+  return list.map(t => {
+    const raw = String(t.description || '');
+    const nota = /^Beli bahan\s*\(nota\)\s*:/i.test(raw);
+    const title = raw.replace(/^Beli bahan\s*\(nota\)\s*:\s*/i, '').replace(/^Beli bahan:\s*/i, '') || 'Pembelian bahan';
+    return `<div class="pu"><div class="pm"><div class="pt">${esc(title)}</div><div class="mut">${esc(beliDay(t.date))}${nota ? ' <span class="tag">Nota</span>' : ''}</div></div><b class="pa">${rp(t.amount)}</b></div>`;
+  }).join('') +
+    '<p class="mut" style="margin-top:10px">Catatan yang sudah tersimpan tidak bisa diubah dari kasir. Kalau ada yang salah, betulkan di Ilham ERP.</p>';
 }
 
 function beli() {
@@ -85,25 +95,24 @@ function beli() {
   }
   const accProblem = PosERP.purchaseProblems(mapping, ERP.getActiveAccounts(), bf.method, erpBiz.id);
   const m = beliMaterial();
-  return `<div class="row sp"><h1>Beli Bahan</h1><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/products.html">Kelola bahan di ERP</a></div>
+  return `<div class="row sp"><h1>Beli Bahan</h1><a class="btn s sm" href="https://accountingilhamv1.github.io/Ilhamoke/products.html">Kelola bahan di ERP</a></div>
 <p class="mut">Catat pembelian bahan baku. Jurnal tercatat otomatis, harga bahan diperbarui ke harga beli terbaru, dan stok bahan bertambah.</p>
 ${bahanList.length ? '' : '<div class="warn">Belum ada bahan di ERP. Tambahkan dulu di menu Bahan &amp; Produk, atau pilih "Bukan bahan di daftar" untuk mencatat jurnalnya saja.</div>'}
 ${accProblem.length ? `<div class="warn"><b>Pengaturan belum lengkap.</b> ${esc(accProblem.join(' '))} <a href="#setup" onclick="go('setup')">Buka Pengaturan</a></div>` : ''}
 ${notaCard()}
 <div class="card">
-<label>Bahan yang dibeli</label>
-<select id="bmat" onchange="beliSet('mat',this.value)">${beliMatOptions()}</select>
-<div id="bhint" class="mut"></div>
-<div class="row" style="margin-top:4px">
-<div style="flex:1;min-width:140px"><label id="bqtylabel">Jumlah dibeli${m && m.unit ? ' (' + esc(m.unit) + ')' : ''}</label><input id="bqty" inputmode="decimal" autocomplete="off" placeholder="Contoh: 2 atau 0,5" value="${esc(bf.qty)}" oninput="beliSet('qty',this.value)"></div>
-<div style="flex:1;min-width:140px"><label>Total bayar (Rp)</label><input id="bamount" inputmode="numeric" autocomplete="off" value="${esc(bf.amount)}" oninput="mask(this);beliSet('amount',this.value)"></div>
+<h2>Catat manual</h2>
+<div class="fg">
+<div class="fld full"><label for="bmat">Bahan yang dibeli</label><select id="bmat" onchange="beliSet('mat',this.value)">${beliMatOptions()}</select><div id="bhint" class="mut"></div></div>
+<div class="fld"><label id="bqtylabel" for="bqty">Jumlah dibeli${m && m.unit ? ' (' + esc(m.unit) + ')' : ''}</label><input id="bqty" inputmode="decimal" autocomplete="off" placeholder="Mis. 2 atau 0,5" value="${esc(bf.qty)}" oninput="beliSet('qty',this.value)"></div>
+<div class="fld"><label for="bamount">Total bayar</label><div class="amt"><span>Rp</span><input id="bamount" inputmode="numeric" autocomplete="off" placeholder="0" value="${esc(bf.amount)}" oninput="mask(this);beliSet('amount',this.value)"></div></div>
+<div class="fld"><label for="bdate">Tanggal</label><input type="date" id="bdate" value="${esc(bf.date)}" onchange="beliSet('date',this.value)"></div>
+<div class="fld"><label for="bmethod">Dibayar dengan</label><select id="bmethod" onchange="beliSet('method',this.value);render()">${beliMethodOptions()}</select></div>
+<div class="fld full"><label for="bnote">Catatan <span class="mut">(opsional)</span></label><input id="bnote" maxlength="80" placeholder="Misalnya: beli di Toko Makmur" value="${esc(bf.note)}" oninput="beliSet('note',this.value)"></div>
 </div>
-<div class="row"><div style="flex:1;min-width:140px"><label>Tanggal</label><input type="date" id="bdate" value="${esc(bf.date)}" onchange="beliSet('date',this.value)"></div>
-<div style="flex:1;min-width:140px"><label>Dibayar dengan</label><select id="bmethod" onchange="beliSet('method',this.value);render()">${beliMethodOptions()}</select></div></div>
-<label>Catatan (opsional)</label><input id="bnote" maxlength="80" placeholder="Misalnya: beli di Toko Makmur" value="${esc(bf.note)}" oninput="beliSet('note',this.value)">
-<div id="bprev" class="mut" style="margin-top:10px"></div>
+<div id="bprev"></div>
 <div class="err" id="bmsg"></div>
-<div class="row" style="margin-top:10px"><button class="btn" onclick="beliConfirm()">Simpan pembelian</button></div>
+<div class="actions"><button class="btn lg" onclick="beliConfirm()">Simpan pembelian</button></div>
 </div>
 <div class="card"><h2>Pembelian terakhir</h2>${beliList()}</div>`;
 }
@@ -332,20 +341,19 @@ async function notaPick(el) {
 }
 
 function notaCard() {
-  if (ntBusy) return '<div class="card"><h2>Foto nota</h2><p class="mut">Membaca nota, tunggu sebentar…</p></div>';
+  if (ntBusy) return '<div class="card"><h2>Foto nota</h2><div class="busy"><span class="spin"></span><span>Membaca nota, tunggu sebentar…</span></div></div>';
   if (nt) return notaReview();
-  return `<div class="card"><h2>Foto nota</h2><p class="mut">Foto nota belanja bahan, lalu barang dan totalnya dibaca otomatis. Hasilnya diperiksa dulu sebelum disimpan. Harga dan stok bahan yang cocok ikut diperbarui.</p><input type="file" id="ntfile" accept="image/*" onchange="notaPick(this)"><div class="err">${esc(ntErr)}</div></div>`;
+  return `<div class="card"><h2>Foto nota</h2><label class="drop" for="ntfile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg><span class="dt">Foto nota belanja</span><span class="ds">Ambil foto atau pilih gambar dari galeri</span><input type="file" id="ntfile" class="vh" accept="image/*" onchange="notaPick(this)"></label><p class="mut">Barang dan total dibaca otomatis. Hasilnya diperiksa dulu sebelum disimpan, dan harga serta stok bahan yang cocok ikut diperbarui.</p><div class="err">${esc(ntErr)}</div></div>`;
 }
 
 function notaItemHtml(it) {
   const q = it.qty !== null ? qtyTxt2(it.qty) + (it.unit ? ' ' + esc(it.unit) : '') + ' ' : '';
-  const line = `${q}${esc(it.name)}${it.price !== null ? ' — ' + rp(it.price) : ''}`;
   let note;
   if (it.status === 'ok') note = `<span class="ok">cocok: ${esc(it.matName)}, harga jadi ${rp(PosERP.unitPriceOf(it.price, it.qty))} per ${esc(it.matUnit || 'satuan')}, stok +${qtyTxt2(it.qty)}</span>`;
   else if (it.status === 'unit') note = `mirip ${esc(it.hint)}, tapi satuan beda (nota ${esc(it.unit)}, bahan ${esc(it.hintUnit)}). Stok tidak diubah.`;
   else if (it.status === 'nodata') note = `cocok: ${esc(it.hint)}, tapi jumlah atau harga tidak terbaca. Stok tidak diubah.`;
   else note = 'belum ada di daftar bahan. Stok tidak diubah.';
-  return `<div class="ci"><div>${line}</div><div class="mut">➜ ${note}</div></div>`;
+  return `<div class="ni ${it.status === 'ok' ? 'is-ok' : 'is-wn'}"><div class="r1"><span>${q}${esc(it.name)}</span>${it.price !== null ? `<b>${rp(it.price)}</b>` : ''}</div><div class="nt">${note}</div></div>`;
 }
 
 function notaReview() {
@@ -353,14 +361,17 @@ function notaReview() {
   const today = dstr(new Date());
   const day = /^\d{4}-\d{2}-\d{2}$/.test(nt.date || '') && nt.date <= today ? nt.date : today;
   return `<div class="card"><h2>Nota terbaca (belum disimpan)</h2>
-<p class="mut">Toko: <b>${esc(nt.merchant || 'tidak terbaca')}</b><br>Tanggal: <b>${esc(day)}</b>${day !== nt.date ? ' (tanggal nota tidak terbaca atau di masa depan, dipakai hari ini)' : ''}</p>
+<div class="meta"><div><small>Toko</small><b>${esc(nt.merchant || 'tidak terbaca')}</b></div><div><small>Tanggal</small><b>${esc(beliDay(day))}</b></div></div>
+${day !== nt.date ? '<p class="mut" style="margin-top:-4px">Tanggal nota tidak terbaca atau di masa depan, dipakai hari ini.</p>' : ''}
 ${nt.items.length ? nt.items.map(notaItemHtml).join('') : '<p class="mut">Tidak ada barang yang terbaca. Hanya total yang akan dicatat.</p>'}
-<label>Total nota (Rp)</label><input id="nttotal" inputmode="numeric" autocomplete="off" value="${fmt(nt.total)}" oninput="mask(this);nt.total=num(this.value)">
-<label>Dibayar dengan</label><select onchange="nt.method=this.value;render()">${PosERP.METHODS.map(m => `<option ${nt.method === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>
-${problems.length ? `<div class="warn" style="margin-top:10px"><b>Pengaturan belum lengkap.</b> ${esc(problems.join(' '))} <a href="#setup" onclick="go('setup')">Buka Pengaturan</a></div>` : ''}
-<p class="mut">Periksa dulu. Kalau total atau barang salah, batalkan lalu foto ulang.</p>
+<div class="fg">
+<div class="fld"><label for="nttotal">Total nota</label><div class="amt"><span>Rp</span><input id="nttotal" inputmode="numeric" autocomplete="off" value="${fmt(nt.total)}" oninput="mask(this);nt.total=num(this.value)"></div></div>
+<div class="fld"><label for="ntmethod">Dibayar dengan</label><select id="ntmethod" onchange="nt.method=this.value;render()">${PosERP.METHODS.map(m => `<option ${nt.method === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>
+</div>
+${problems.length ? `<div class="warn" style="margin-top:12px"><b>Pengaturan belum lengkap.</b> ${esc(problems.join(' '))} <a href="#setup" onclick="go('setup')">Buka Pengaturan</a></div>` : ''}
+<p class="mut" style="margin-top:12px">Periksa dulu. Kalau total atau barang salah, batalkan lalu foto ulang.</p>
 <div class="err" id="ntmsg"></div>
-<div class="row"><button class="btn" ${problems.length ? 'disabled' : ''} onclick="notaSave(false)">Simpan nota</button><button class="btn s" onclick="notaCancel()">Batal</button></div></div>`;
+<div class="actions"><button class="btn lg" ${problems.length ? 'disabled' : ''} onclick="notaSave(false)">Simpan nota</button><button class="btn s lg" onclick="notaCancel()">Batal</button></div></div>`;
 }
 
 function notaCancel() { nt = null; ntErr = ''; render(); }
