@@ -195,6 +195,17 @@ th{color:var(--mute);font-weight:600;font-size:.8rem;background:#f6f9fd}
 .spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--tint);border-top-color:var(--blue);animation:spn .7s linear infinite;flex:none}
 @keyframes spn{to{transform:rotate(360deg)}}
 
+/* ---------- beranda: kepala halaman ---------- */
+.hdr{display:flex;flex-direction:column;gap:14px;margin-bottom:16px}
+.hdr .btn{width:100%}
+.card.sumc>.row.sp h2{margin:0}
+@media(min-width:700px){.hdr{flex-direction:row;align-items:center;justify-content:space-between}.hdr .btn{width:auto;min-width:200px}}
+/* tombol pilih file bergaya baru (berlaku juga kalau halaman masih memakai input bawaan) */
+input[type=file]:not(.vh){padding:14px;min-height:64px;border:2px dashed #b3c6e4;background:var(--tint);color:var(--mute);border-radius:var(--r1);cursor:pointer;font-size:.9rem}
+input[type=file]:not(.vh):hover{border-color:var(--blue)}
+input[type=file]:not(.vh)::file-selector-button{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:10px 16px;margin-right:12px;font:inherit;font-weight:600;cursor:pointer}
+input[type=file]:not(.vh)::file-selector-button:hover{background:var(--blue2)}
+
 /* ---------- menu: laci geser (HP, tablet, dan mode ringkas) ---------- */
 .hb{display:flex;align-items:center;justify-content:center}
 .hbi{display:block;width:18px;height:2px;background:#fff;border-radius:2px;box-shadow:0 -6px 0 #fff,0 6px 0 #fff}
@@ -243,7 +254,7 @@ body.cm .cmb .l1,body:not(.cm) .cmb .l2{display:none}
 <script src="assets/parser.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/pos-erp.js"></script>
-<script src="assets/beli-bahan.js"></script>
+<script src="assets/beli-bahan.js?v=2"></script>
 <script>
 const K='catatin.v1';
 let db=null,cart=[],pay={m:'Tunai',paid:''},saving=false,q='',pq='',hf={q:'',a:'',b:''},loading=false;
@@ -386,7 +397,7 @@ function topCard(){const from=shiftYmd(dstr(new Date()),-6),m=new Map();
   return `<div class="card"><div class="row sp hd"><h2>Produk terlaris 7 hari</h2><span class="mut">di perangkat ini</span></div>`+
     a.map(([n,o])=>`<div class="tp"><div class="r1"><span>${esc(n)}</span><b>${o.q}× · ${rp(o.v)}</b></div><div class="tr"><i style="width:${Math.max(4,Math.round(o.q/mx*100))}%"></i></div></div>`).join('')+'</div>'}
 function dash(){const t=dstr(new Date()),tx=db.txs.filter(x=>x.date===t&&!x.void),sum=tx.reduce((a,x)=>a+x.total,0),act=catalog.filter(p=>p.active).length;
-  return `<div class="row sp"><h1>Beranda</h1><button class="btn" onclick="go('pos')">Mulai transaksi</button></div><p class="mut" style="margin-top:-6px">${esc(db.biz.name)}${erpUser&&erpUser.email?' · '+esc(erpUser.email):''}</p>${installCard()}${legacyBanner()}${catalogCachedAt?`<div class="warn">Katalog sedang memakai salinan terakhir (${esc(String(catalogCachedAt).slice(0,10))}) karena server belum bisa dihubungi. Harga dan harga modal bisa berubah di Ilham ERP.</div>`:''}
+  return `<div class="hdr"><div><h1>Beranda</h1><p class="mut" style="margin:0">${esc(db.biz.name)}${erpUser&&erpUser.email?' · '+esc(erpUser.email):''}</p></div><button class="btn lg" onclick="go('pos')">Mulai transaksi</button></div>${installCard()}${legacyBanner()}${catalogCachedAt?`<div class="warn">Katalog sedang memakai salinan terakhir (${esc(String(catalogCachedAt).slice(0,10))}) karena server belum bisa dihubungi. Harga dan harga modal bisa berubah di Ilham ERP.</div>`:''}
 ${sumCard()}${chartCard()}<div class="card"><div class="row sp hd"><h2>Di perangkat ini hari ini</h2><span class="mut">omzet, bukan laba</span></div><div class="mini"><div><small>Omzet</small><b>${rp(sum)}</b></div><div><small>Transaksi</small><b>${tx.length}</b></div><div><small>Rata-rata</small><b>${rp(tx.length?Math.round(sum/tx.length):0)}</b></div><div><small>Produk aktif di ERP</small><b>${act}</b></div></div></div>
 ${topCard()}<div class="card"><div class="row sp"><h2>Transaksi terbaru</h2><a href="#history">Lihat semua</a></div>${txTable(db.txs.slice(-5).reverse())}</div>
 <div class="mut">Penjualan langsung tersimpan sebagai catatan di Ilham ERP, dan stok bahan berkurang sesuai resep produk.</div>`}
