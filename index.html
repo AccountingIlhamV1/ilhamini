@@ -149,25 +149,54 @@ th{color:var(--mute);font-weight:600;font-size:.8rem;background:#f6f9fd}
 .tp .tr{height:8px;background:#eef2f8;border-radius:99px;overflow:hidden;margin-top:5px}
 .tp .tr i{display:block;height:100%;background:var(--blue);border-radius:99px}
 
-/* ---------- layar lebar: sidebar kiri ---------- */
+/* ---------- kasir ---------- */
+.pl{padding:9px;margin:3px -9px 0}
+.pi{position:relative;transition:border-color .12s,background .12s,transform .1s}
+.pi:active{transform:scale(.97)}
+.pi b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pi.in{border-color:var(--blue);background:var(--tint)}
+.bd{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 6px;display:flex;align-items:center;justify-content:center;background:var(--blue);color:#fff;border-radius:99px;font-size:.75rem;font-weight:700;box-shadow:0 0 0 2px #fff}
+#cart .row.sp.hd h2{margin:0}
+.bsum{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:inherit;min-width:0}
+#chg{margin:10px 0 0}#chg b{font-size:1.2rem;color:var(--green)}
+
+/* ---------- menu: laci geser (HP, tablet, dan mode ringkas) ---------- */
+.hb{display:flex;align-items:center;justify-content:center}
+.hbi{display:block;width:18px;height:2px;background:#fff;border-radius:2px;box-shadow:0 -6px 0 #fff,0 6px 0 #fff}
+.top nav{display:flex;position:fixed;top:0;left:0;bottom:0;width:min(280px,86vw);z-index:2;padding:18px 12px 20px;gap:2px;border-top:0;overflow-y:auto;transform:translateX(-102%);visibility:hidden;transition:transform .22s cubic-bezier(.2,.8,.2,1),visibility 0s .22s;box-shadow:none}
+.top nav.open{transform:none;visibility:visible;transition:transform .22s cubic-bezier(.2,.8,.2,1),visibility 0s;box-shadow:12px 0 30px rgba(8,22,44,.35)}
+.top nav::before{content:"Menu";color:#8dbcff;font-weight:700;font-size:.9rem;padding:4px 14px 12px}
+.top nav a:last-of-type{margin-top:auto;color:#9db6da}
+.scrim{display:none;position:fixed;inset:0;background:rgba(9,22,43,.5);z-index:1}
+.top nav.open+.scrim{display:block}
+.cmb{display:none;margin-top:8px;background:transparent;border:1px solid #3d5f90;color:#c6d8f2;border-radius:var(--r2);padding:9px 14px;text-align:left;cursor:pointer;font-size:.86rem;font-weight:500}
+.cmb:hover{background:var(--navy2);color:#fff}
+body.cm .cmb .l1,body:not(.cm) .cmb .l2{display:none}
+
+/* ---------- tablet & layar lebar: tata letak isi ---------- */
 @media(min-width:900px){
-  body:has(.top){padding-left:var(--side)}
-  .top{position:fixed;left:0;top:0;bottom:0;width:var(--side);flex-direction:column;align-items:stretch;justify-content:flex-start;padding:22px 12px;gap:6px}
-  .logo{padding:2px 14px 20px;font-size:1.4rem}
-  .hb{display:none}
-  .top nav{display:flex;position:static;flex-direction:column;background:none;box-shadow:none;border:0;padding:0;flex:1;gap:2px}
-  .top a{padding:10px 14px}
-  .top a:last-child{margin-top:auto;color:#9db6da}
   main{padding:26px 28px 40px}
   .pos{grid-template-columns:1.3fr 1fr;align-items:start}
   .pos>.card:last-child{position:sticky;top:18px}
   .pl{max-height:62vh}
   .grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}
   .mini{grid-template-columns:repeat(4,1fr)}
-  .bar{left:var(--side)}
-  .toast{left:calc(50% + var(--side)/2)}
   .ov{align-items:center;padding:20px}.md{border-radius:16px;padding:22px}
   .auth{margin-left:auto;margin-right:auto}
+}
+/* ---------- desktop: menu samping tetap terlihat (bisa diringkas) ---------- */
+@media(min-width:1200px){
+  body:not(.cm):has(.top){padding-left:var(--side)}
+  body:not(.cm) .top{position:fixed;left:0;top:0;bottom:0;width:var(--side);flex-direction:column;align-items:stretch;justify-content:flex-start;padding:22px 12px;gap:6px}
+  body:not(.cm) .logo{padding:2px 14px 20px;font-size:1.4rem}
+  body:not(.cm) .hb{display:none}
+  body:not(.cm) .top nav{position:static;transform:none;visibility:visible;width:auto;box-shadow:none;padding:0;flex:1;gap:2px;overflow:visible;transition:none}
+  body:not(.cm) .top nav::before{content:none}
+  body:not(.cm) .scrim{display:none!important}
+  body:not(.cm) .top a{padding:10px 14px}
+  body:not(.cm) .bar{left:var(--side)}
+  body:not(.cm) .toast{left:calc(50% + var(--side)/2)}
+  .cmb{display:block}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{body{padding:0}body *{visibility:hidden}.rcpt,.rcpt *{visibility:visible}.rcpt{position:absolute;left:0;top:0;width:100%;border:0;background:none}.ov{background:none}}
@@ -206,13 +235,17 @@ function render(){
   const v=(location.hash||'#').slice(1)||'dash';
   const nav=[['dash','Beranda'],['pos','Kasir'],['kas','Uang'],['beli','Beli Bahan'],['products','Katalog'],['history','Riwayat'],['setup','Pengaturan'],['profile','Profil']];
   const pg={dash,pos,kas:kasPage,beli:window.beli||dash,products,history,setup,profile}[v]||dash;
-  $('app').innerHTML=`<header class="top"><span class="logo">catat<b>.in</b></span><button class="hb" aria-label="Menu" aria-expanded="false" onclick="tm(this)">☰</button><nav id="nv">${nav.map(([k,t])=>`<a class="${k===v?'on':''}" onclick="gn('${k}')">${t}</a>`).join('')}<a onclick="logout()">Keluar</a></nav></header><main><div id="netbar"></div>${pg()}</main>`;
+  $('app').innerHTML=`<header class="top"><span class="logo">catat<b>.in</b></span><button class="hb" aria-label="Menu" aria-expanded="false" onclick="tm(this)"><span class="hbi"></span></button><nav id="nv">${nav.map(([k,t])=>`<a class="${k===v?'on':''}" onclick="gn('${k}')">${t}</a>`).join('')}<a onclick="logout()">Keluar</a><button type="button" class="cmb" onclick="cmSet()"><span class="l1">‹ Ringkas menu</span><span class="l2">Tampilkan menu samping</span></button></nav><div class="scrim" onclick="tm(document.querySelector('.hb'))"></div></header><main><div id="netbar"></div>${pg()}</main>`;
   if(v==='pos')list();
   if(v==='kas')kasPrev();
   if(v==='beli'&&window.beliInit)beliInit();
   netbar();
 }
-function tm(b){const o=$('nv').classList.toggle('open');b.setAttribute('aria-expanded',o)}
+function tm(b){const o=$('nv').classList.toggle('open');if(b)b.setAttribute('aria-expanded',o)}
+/* Mode ringkas: di layar lebar, menu samping bisa disembunyikan jadi tombol garis tiga. Pilihan diingat di perangkat. */
+function cmSet(on){const c=document.body.classList.toggle('cm',typeof on==='boolean'?on:undefined);try{localStorage.setItem('catatin.menu',c?'compact':'side')}catch(e){}render()}
+try{if(localStorage.getItem('catatin.menu')==='compact')document.body.classList.add('cm')}catch(e){}
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const n=$('nv');if(n&&n.classList.contains('open')){n.classList.remove('open');const h=document.querySelector('.hb');if(h)h.setAttribute('aria-expanded','false')}});
 function gn(k){if(location.hash==='#'+k)render();else go(k)}
 /* AUTH (Supabase ERP) */
 function loginPage(msg=''){$('app').innerHTML=`<div class="auth"><div class="logo" style="font-size:1.8rem;color:var(--n)">catat<b style="color:var(--b)">.in</b></div><h1>Masuk ke Kasir</h1><div class="warn">Kasir memakai akun Ilham ERP yang sama. Jika halaman tidak berpindah, buka <a href="login.html">halaman masuk</a>.</div><div class="err">${esc(msg)}</div></div>`}
@@ -350,16 +383,20 @@ function ptog(id){const p=db.products.find(x=>x.id===id);p.active=!p.active;if(p
 function total(){return cart.reduce((a,i)=>a+i.qty*i.price-i.disc,0)}
 function pos(){return `<h1>Kasir</h1><div class="pos"><div class="card" style="margin:0"><input id="qs" type="search" placeholder="Cari produk" value="${esc(q)}" oninput="q=this.value;list()"><div class="pl" id="pl"></div></div><div class="card" style="margin:0" id="cart"></div></div><div style="height:80px"></div><div class="bar" id="bar"></div>`}
 function list(){const f=q.toLowerCase(),a=catalog.filter(p=>p.active&&(p.name+p.code).toLowerCase().includes(f));
-  $('pl').innerHTML=a.length?a.map(p=>`<button class="pi" onclick="add('${p.id}')"><b>${esc(p.name)}</b><br>${rp(p.price)}</button>`).join(''):'<p class="mut">Tidak ada produk aktif yang cocok. Tambahkan produk di ERP.</p>';drawCart()}
+  $('pl').innerHTML=a.length?a.map(p=>`<button class="pi" data-id="${p.id}" onclick="add('${p.id}')"><b>${esc(p.name)}</b><br>${rp(p.price)}</button>`).join(''):'<p class="mut">Tidak ada produk aktif yang cocok. Tambahkan produk di ERP.</p>';drawCart()}
 function add(id){const p=catalog.find(x=>x.id===id),c=cart.find(i=>i.pid===id);if(!p)return;if(c)c.qty=Math.min(9999,c.qty+1);else cart.push({pid:id,code:p.code,name:p.name,price:p.price,qty:1,disc:0,cost:p.cost==null?null:p.cost});drawCart()}
 function setq(i,v){v=Number(v);if(!Number.isInteger(v)||v<1)v=1;cart[i].qty=Math.min(v,9999);if(cart[i].disc>cart[i].qty*cart[i].price)cart[i].disc=0;drawCart()}
 function setd(i,v){v=Math.min(Math.max(0,Math.floor(Number(v)||0)),cart[i].qty*cart[i].price);cart[i].disc=v;drawCart()}
 function drawCart(){const t=total();
-  $('cart').innerHTML=`<h2>Keranjang</h2>${cart.length?cart.map((i,k)=>`<div class="ci"><div class="ci1"><div><b>${esc(i.name)}</b><div class="mut">${rp(i.price)}</div></div><button class="btn s sm" onclick="cart.splice(${k},1);drawCart()" aria-label="Hapus item">✕</button></div><div class="ci2"><div class="st"><button class="btn s" onclick="setq(${k},${i.qty-1})" ${i.qty<=1?'disabled':''} aria-label="Kurangi">−</button><input inputmode="numeric" value="${i.qty}" onchange="setq(${k},num(this.value))" aria-label="Jumlah"><button class="btn s" onclick="setq(${k},${i.qty+1})" aria-label="Tambah">+</button></div><b>${rp(i.qty*i.price-i.disc)}</b></div><details ${i.disc?'open':''}><summary>Diskon${i.disc?' −'+rp(i.disc):''}</summary><input inputmode="numeric" autocomplete="off" placeholder="Diskon (Rp)" value="${fmt(i.disc||'')}" oninput="mask(this)" onchange="setd(${k},num(this.value))"></details></div>`).join(''):'<p class="mut">Keranjang kosong. Pilih produk untuk memulai.</p>'}`;
-  $('bar').innerHTML=`<div><small class="mut">Total</small><div class="tot">${rp(t)}</div></div><button class="btn" ${cart.length?'':'disabled'} onclick="payModal()">Bayar</button>`}
+  $('cart').innerHTML=`<div class="row sp hd"><h2>Keranjang${cart.length?` <span class="tag">${cart.reduce((a,i)=>a+i.qty,0)} item</span>`:''}</h2>${cart.length?`<button class="btn s sm" onclick="if(confirm('Kosongkan keranjang?')){cart.length=0;drawCart()}">Kosongkan</button>`:''}</div>${cart.length?cart.map((i,k)=>`<div class="ci"><div class="ci1"><div><b>${esc(i.name)}</b><div class="mut">${rp(i.price)}</div></div><button class="btn s sm" onclick="cart.splice(${k},1);drawCart()" aria-label="Hapus item">✕</button></div><div class="ci2"><div class="st"><button class="btn s" onclick="setq(${k},${i.qty-1})" ${i.qty<=1?'disabled':''} aria-label="Kurangi">−</button><input inputmode="numeric" value="${i.qty}" onchange="setq(${k},num(this.value))" aria-label="Jumlah"><button class="btn s" onclick="setq(${k},${i.qty+1})" aria-label="Tambah">+</button></div><b>${rp(i.qty*i.price-i.disc)}</b></div><details ${i.disc?'open':''}><summary>Diskon${i.disc?' −'+rp(i.disc):''}</summary><input inputmode="numeric" autocomplete="off" placeholder="Diskon (Rp)" value="${fmt(i.disc||'')}" oninput="mask(this)" onchange="setd(${k},num(this.value))"></details></div>`).join(''):'<p class="mut">Keranjang kosong. Pilih produk untuk memulai.</p>'}`;
+  $('bar').innerHTML=`<button type="button" class="bsum" onclick="$('cart').scrollIntoView({behavior:'smooth',block:'start'})" aria-label="Lihat keranjang"><small class="mut">Total${cart.length?' · '+cart.reduce((a,i)=>a+i.qty,0)+' item':''}</small><div class="tot">${rp(t)}</div></button><button class="btn" ${cart.length?'':'disabled'} onclick="payModal()">Bayar</button>`;markTiles()}
+/* Penanda jumlah di kartu produk & pilihan uang tunai cepat */
+function markTiles(){document.querySelectorAll('#pl .pi').forEach(b=>{const c=cart.find(i=>i.pid===b.dataset.id),bd=b.querySelector('.bd');
+  if(c){b.classList.add('in');if(bd)bd.textContent=c.qty;else b.insertAdjacentHTML('beforeend','<span class="bd">'+c.qty+'</span>')}else{b.classList.remove('in');if(bd)bd.remove()}})}
+function cashOpts(t){const s=new Set([t]);[5000,10000,50000,100000].forEach(u=>s.add(Math.ceil(t/u)*u));return [...s].filter(v=>v>=t).sort((a,b)=>a-b).slice(0,4)}
 function payModal(){if(!cart.length)return;const t=total();const cogs=SaleCore.cogsFromItems(cart).total;const offline=!onlineNow();const problems=erpBiz?PosERP.mappingProblems(mapping,accounts,pay.m,cogs,erpBiz.id):['Usaha ERP belum siap.'];
   ov(`<h2>Pembayaran</h2><div class="tot">${rp(t)}</div><div class="mut">${cart.reduce((a,i)=>a+i.qty,0)} item</div><label>Metode pembayaran</label><select onchange="pay.m=this.value;payModal()">${PosERP.METHODS.map(m=>`<option ${pay.m===m?'selected':''}>${m}</option>`).join('')}</select>
-${pay.m==='Tunai'?`<label>Uang diterima (Rp)</label><input id="pd" inputmode="numeric" autocomplete="off" value="${fmt(pay.paid)}" oninput="mask(this);pay.paid=this.value?String(num(this.value)):'';chg()"><div class="row" style="margin-top:6px"><button class="btn s sm" onclick="pay.paid=String(total());payModal()">Uang pas</button></div><p id="chg"></p>`:'<p class="mut">Hanya mencatat metode pembayaran. Pembayaran tidak diverifikasi aplikasi.</p>'}
+${pay.m==='Tunai'?`<label>Uang diterima (Rp)</label><input id="pd" inputmode="numeric" autocomplete="off" value="${fmt(pay.paid)}" oninput="mask(this);pay.paid=this.value?String(num(this.value)):'';chg()"><div class="row" style="margin-top:6px">${cashOpts(t).map(v=>`<button class="btn s sm" onclick="pay.paid='${v}';payModal()">${v===t?'Uang pas':rp(v)}</button>`).join('')}</div><p id="chg"></p>`:'<p class="mut">Hanya mencatat metode pembayaran. Pembayaran tidak diverifikasi aplikasi.</p>'}
 ${offline?'<div class="warn"><b>Tidak ada koneksi internet.</b> Transaksi belum bisa disimpan ke ERP. Sambungkan internet lalu buka pembayaran lagi.</div>':''}
 ${problems.length?`<div class="warn"><b>Pengaturan pencatatan belum lengkap.</b> ${esc(problems.join(' '))} <a href="#setup" onclick="cl();go('setup')">Buka Pengaturan</a></div>`:''}
 <div class="err" id="m"></div><div class="row"><button class="btn" id="sv" onclick="commit()" ${problems.length||offline?'disabled':''}>Simpan transaksi</button><button class="btn s" onclick="cl()">Kembali</button></div>`);chg()}
