@@ -160,6 +160,41 @@ th{color:var(--mute);font-weight:600;font-size:.8rem;background:#f6f9fd}
 .bsum{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:inherit;min-width:0}
 #chg{margin:10px 0 0}#chg b{font-size:1.2rem;color:var(--green)}
 
+/* ---------- beli bahan ---------- */
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;margin:4px 0 12px;padding:22px 16px;border:2px dashed #b3c6e4;border-radius:var(--r1);background:var(--tint);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover{border-color:var(--blue);background:#dfeafb}
+.drop:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.drop svg{width:34px;height:34px;color:var(--blue);margin-bottom:2px}
+.dt{font-weight:700;font-size:1rem;color:var(--navy)}
+.ds{font-size:.84rem;color:var(--mute);font-weight:400}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:0 12px}
+.fld{min-width:0}.fld.full{grid-column:1/-1}
+.fld label{margin:12px 0 5px}
+.fld .mut{margin-top:6px}
+.amt{position:relative}
+.amt span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute);font-weight:600;pointer-events:none}
+.amt input{padding-left:38px;font-weight:600}
+#bprev:not(:empty){margin-top:16px;padding:11px 14px;background:var(--tint);border:1px solid #c5d8f5;border-radius:10px;color:var(--ink2);font-size:.9rem}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:130px}
+.btn.lg{min-height:48px;font-size:1rem}
+.pu{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.pu:last-of-type{border-bottom:0}
+.pt{font-weight:600;line-height:1.35}
+.pa{white-space:nowrap;color:var(--navy)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:2px 0 12px}
+.meta>div{background:#fff;padding:10px 14px;min-width:0}
+.meta small{display:block;color:var(--mute);font-size:.78rem}
+.meta b{display:block}
+.ni{padding:10px 12px;margin:0 0 8px;border:1px solid var(--line);border-left:4px solid var(--line2);border-radius:var(--r2);background:#fff}
+.ni.is-ok{border-left-color:var(--green)}.ni.is-wn{border-left-color:#d4a017}
+.ni .r1{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.ni .nt{margin-top:3px;font-size:.84rem;color:var(--mute)}
+.busy{display:flex;align-items:center;gap:12px;padding:12px 0;color:var(--ink2)}
+.spin{width:20px;height:20px;border-radius:50%;border:3px solid var(--tint);border-top-color:var(--blue);animation:spn .7s linear infinite;flex:none}
+@keyframes spn{to{transform:rotate(360deg)}}
+
 /* ---------- menu: laci geser (HP, tablet, dan mode ringkas) ---------- */
 .hb{display:flex;align-items:center;justify-content:center}
 .hbi{display:block;width:18px;height:2px;background:#fff;border-radius:2px;box-shadow:0 -6px 0 #fff,0 6px 0 #fff}
