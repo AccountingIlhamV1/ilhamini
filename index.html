@@ -44,6 +44,7 @@ input[readonly]{background:#eef2f8;color:var(--m)}.toast{position:fixed;left:50%
 <script src="assets/parser.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/pos-erp.js"></script>
+<script src="assets/beli-bahan.js"></script>
 <script>
 const K='catatin.v1';
 let db=null,cart=[],pay={m:'Tunai',paid:''},saving=false,q='',pq='',hf={q:'',a:'',b:''},loading=false;
@@ -68,11 +69,12 @@ function render(){
   if(bootError){$('app').innerHTML=`<div class="auth"><div class="card"><h1>Tidak bisa memuat</h1><div class="err">${esc(bootError)}</div><div class="row"><button class="btn" onclick="location.reload()">Coba lagi</button><button class="btn s" onclick="logout()">Keluar</button></div><p class="mut">Kalau masalah berlanjut, buka ERP untuk memeriksa akun dan koneksi.</p></div></div>`;return}
   if(!erpBiz||!db){$('app').innerHTML=noBusinessPage();return}
   const v=(location.hash||'#').slice(1)||'dash';
-  const nav=[['dash','Beranda'],['pos','Kasir'],['kas','Uang'],['products','Katalog'],['history','Riwayat'],['setup','Pengaturan'],['profile','Profil']];
-  const pg={dash,pos,kas:kasPage,products,history,setup,profile}[v]||dash;
+  const nav=[['dash','Beranda'],['pos','Kasir'],['kas','Uang'],['beli','Beli Bahan'],['products','Katalog'],['history','Riwayat'],['setup','Pengaturan'],['profile','Profil']];
+  const pg={dash,pos,kas:kasPage,beli:window.beli||dash,products,history,setup,profile}[v]||dash;
   $('app').innerHTML=`<header class="top"><span class="logo">catat<b>.in</b></span><button class="hb" aria-label="Menu" aria-expanded="false" onclick="tm(this)">☰</button><nav id="nv">${nav.map(([k,t])=>`<a class="${k===v?'on':''}" onclick="gn('${k}')">${t}</a>`).join('')}<a onclick="logout()">Keluar</a></nav></header><main><div id="netbar"></div>${pg()}</main>`;
   if(v==='pos')list();
   if(v==='kas')kasPrev();
+  if(v==='beli'&&window.beliInit)beliInit();
   netbar();
 }
 function tm(b){const o=$('nv').classList.toggle('open');b.setAttribute('aria-expanded',o)}
