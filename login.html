@@ -14,29 +14,65 @@
 <meta name="apple-mobile-web-app-title" content="Catat.in">
 <style>
 :root{--n:#12305c;--b:#2f7de1;--bg:#f5f7fb;--l:#e1e7f0;--t:#1b2433;--m:#5d6b82;--r:#c0392b;--g:#1d8a52}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;font:16px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--t);background:var(--bg)}
-.card{width:100%;max-width:420px;background:#fff;border:1px solid var(--l);border-radius:14px;padding:22px}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;font:16px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--t);background:var(--bg);overflow-x:hidden}
+
+/* Latar: tiga cahaya biru yang bergerak pelan */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.bg i{position:absolute;border-radius:50%;will-change:transform}
+.bg i:nth-child(1){width:70vmax;height:70vmax;left:-25vmax;top:-30vmax;background:radial-gradient(circle,rgba(47,125,225,.28),rgba(47,125,225,0) 65%);animation:drift1 22s ease-in-out infinite alternate}
+.bg i:nth-child(2){width:60vmax;height:60vmax;right:-22vmax;bottom:-26vmax;background:radial-gradient(circle,rgba(18,48,92,.26),rgba(18,48,92,0) 65%);animation:drift2 26s ease-in-out infinite alternate}
+.bg i:nth-child(3){width:38vmax;height:38vmax;right:8vmax;top:-10vmax;background:radial-gradient(circle,rgba(47,125,225,.16),rgba(47,125,225,0) 65%);animation:drift3 18s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(14vmax,10vmax) scale(1.08)}}
+@keyframes drift2{to{transform:translate(-12vmax,-8vmax) scale(1.1)}}
+@keyframes drift3{to{transform:translate(-10vmax,12vmax) scale(.9)}}
+
+/* Kartu: satu gerakan masuk saat halaman dibuka */
+.card{position:relative;z-index:1;width:100%;max-width:420px;background:#fff;border:1px solid var(--l);border-radius:14px;padding:22px;box-shadow:0 12px 34px rgba(18,48,92,.10);animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+.card.shake{animation:shake .45s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+
 .logo{font-size:1.8rem;font-weight:700;color:var(--n);margin-bottom:4px}.logo b{color:var(--b)}
-h1{font-size:1.35rem;margin:.2em 0 .4em}label{display:block;font-size:.9rem;color:var(--m);margin:10px 0 3px}
-input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;background:#fff;font:inherit}
-input:focus{outline:2px solid var(--b);outline-offset:1px}
-.btn{display:inline-block;background:var(--b);color:#fff;border:0;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600;text-decoration:none;text-align:center}
-.btn.s{background:#fff;color:var(--n);border:1px solid #b9c5d8}.btn:disabled{opacity:.5;cursor:wait}
+h1{font-size:1.35rem;margin:.2em 0 .4em}label{display:block;font-size:.9rem;color:var(--m);margin:10px 0 3px;transition:color .2s}
+.field:focus-within label{color:var(--b)}
+input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;background:#fff;font:inherit;transition:border-color .2s,box-shadow .2s}
+input:focus{outline:none;border-color:var(--b);box-shadow:0 0 0 4px rgba(47,125,225,.18)}
+input:focus-visible{outline:2px solid var(--b);outline-offset:1px;box-shadow:0 0 0 4px rgba(47,125,225,.18)}
+
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--b);color:#fff;border:0;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600;text-decoration:none;text-align:center;transition:transform .15s,background .2s,box-shadow .2s}
+.btn:hover{background:#2570cf;box-shadow:0 6px 16px rgba(47,125,225,.32)}
+.btn:active{transform:scale(.97)}
+.btn.s{background:#fff;color:var(--n);border:1px solid #b9c5d8}.btn:disabled{opacity:.7;cursor:wait;transform:none;box-shadow:none}
+/* Spinner muncul saat tombol diproses */
+.btn:disabled::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 .err{color:var(--r);font-size:.9rem;margin:8px 0;min-height:1px;white-space:pre-wrap}.ok{color:var(--g);font-size:.9rem;margin:8px 0}
+.err:not(:empty),.ok:not(:empty){animation:msg .3s ease-out both}
+@keyframes msg{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .mut{color:var(--m);font-size:.9rem}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .show{display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--m);font-size:.9rem}.show input{width:auto;min-height:0}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body>
-<div class="card">
+<div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="card" id="card">
   <div class="logo">catat<b>.in</b></div>
   <h1 id="title">Masuk ke Kasir</h1>
   <p class="mut">Gunakan akun Ilham ERP yang sama. Kasir membaca usaha, COA, produk, dan resep dari akun itu.</p>
   <form id="form" novalidate>
-    <label for="email">Email</label>
-    <input id="email" type="email" autocomplete="email" inputmode="email" required>
-    <label for="password">Kata sandi</label>
-    <input id="password" type="password" autocomplete="current-password" required>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" inputmode="email" required>
+    </div>
+    <div class="field">
+      <label for="password">Kata sandi</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+    </div>
     <label class="show"><input type="checkbox" id="show"> Tampilkan kata sandi</label>
     <div class="err" id="message" role="alert"></div>
     <button class="btn" id="submit" type="submit" style="width:100%">Masuk</button>
@@ -48,6 +84,7 @@ input:focus{outline:2px solid var(--b);outline-offset:1px}
 <script src="assets/auth.js"></script>
 <script>
 (function () {
+  var card = document.getElementById("card");
   var form = document.getElementById("form");
   var email = document.getElementById("email");
   var password = document.getElementById("password");
@@ -58,6 +95,12 @@ input:focus{outline:2px solid var(--b);outline-offset:1px}
   function setMessage(text, ok) {
     message.textContent = text || "";
     message.className = ok ? "ok" : "err";
+    // Kartu bergetar sebentar kalau ada pesan error
+    if (text && !ok) {
+      card.classList.remove("shake");
+      void card.offsetWidth;
+      card.classList.add("shake");
+    }
   }
 
   function goNext() {
