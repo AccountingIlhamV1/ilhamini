@@ -10,7 +10,7 @@
 
    Aturan jurnal/HPP tetap satu sumber di assets/sale-core.js.
    Modul ini tidak membuat tabel, RPC, atau kolom baru.
-   Stok tidak diubah oleh kasir.
+   Stok bahan diubah hanya oleh penjualan (lewat resep) dan Beli Bahan.
 ===================================================== */
 
 window.PosERP = (function () {
@@ -344,6 +344,197 @@ window.PosERP = (function () {
       });
   }
 
+  /* ---------- BELI BAHAN BAKU ----------
+     Sama seperti menu "Beli stok/bahan" di bot Telegram:
+       1) jurnal: debit Persediaan Bahan Baku, kredit Kas/Bank
+       2) harga bahan diperbarui ke harga beli terbaru (total / jumlah)
+       3) stok bahan bertambah sebanyak jumlah yang dibeli
+     Pembayaran hanya Tunai/Transfer/QRIS (tanpa bayar nanti).
+     Stok dan harga hanya disentuh kalau jurnal berhasil dan bukan duplikat. */
+
+  const PURCHASE_SOURCE = "catatin-beli";
+
+  function accName(a) {
+    return String((a && a.name) || "").toLowerCase().replace(/^[-*\s]+/, "");
+  }
+
+  function isContraAccount(a) {
+    return /akumulasi|cadangan kerugian|diskonto|treasuri/.test(accName(a));
+  }
+
+  // Akun Persediaan Bahan Baku (aset, bukan akun pengurang).
+  function purchaseAccount(accounts) {
+    requireERP();
+    const hits = (accounts || []).filter(function (a) {
+      return ERP.ASSET_GROUPS.indexOf(a.group) >= 0 && !isContraAccount(a) &&
+        /^persediaan bahan baku/.test(accName(a));
+    });
+    hits.sort(function (x, y) { return accName(x).length - accName(y).length; });
+    return hits[0] || null;
+  }
+
+  function purchaseProblems(map, accounts, method, businessId) {
+    requireERP();
+    const out = [];
+    const m = map || {};
+    if (businessId !== undefined && businessId !== null && !ERP.isUuid(businessId)) {
+      out.push("Usaha belum tersimpan di server ERP.");
+    }
+    if (!purchaseAccount(accounts)) {
+      out.push("Akun Persediaan Bahan Baku belum ada di daftar akun. Tambahkan dulu di ERP, menu Chart of Accounts.");
+    }
+    if (!accountExists(accounts, m[method])) {
+      out.push("Uang keluar lewat " + method + " belum dipilih akunnya di Pengaturan.");
+    }
+    return out;
+  }
+
+  async function loadMaterials(businessId) {
+    const sb = requireClient();
+    const res = await sb.from("materials").select("id,name,unit,price,stock")
+      .eq("business_id", businessId).order("name");
+    if (res.error) throw res.error;
+    return (res.data || []).map(function (m) {
+      return {
+        id: m.id,
+        name: m.name || "",
+        unit: m.unit || "",
+        price: Number(m.price) || 0,
+        stock: m.stock === null || m.stock === undefined ? null : Number(m.stock)
+      };
+    }).filter(function (m) { return m.name; });
+  }
+
+  function purchasePosted(sourceId, businessId) {
+    requireERP();
+    if (!sourceId) return false;
+    return ERP.getActiveTransactions().some(function (t) {
+      if (String(t.sourceId || "") !== String(sourceId)) return false;
+      if (t.source !== PURCHASE_SOURCE) return false;
+      return businessId ? ERP.idEqual(t.businessId, businessId) : true;
+    });
+  }
+
+  function roundTo(n, digits) {
+    const k = Math.pow(10, digits);
+    return Math.round(n * k) / k;
+  }
+
+  // Harga per satuan, dibulatkan 2 desimal (sama dengan bot).
+  function unitPriceOf(amount, qty) {
+    return roundTo(Number(amount) / Number(qty), 2);
+  }
+
+  // Tambah stok bahan. Hanya menulis kalau stok belum diubah perangkat lain.
+  async function addMaterialStock(businessId, materialId, qty) {
+    const sb = requireClient();
+    let last;
+    for (let t = 0; t < 3; t++) {
+      const g = await sb.from("materials").select("name,unit,stock")
+        .eq("id", materialId).eq("business_id", businessId).limit(1);
+      if (g.error || !g.data || !g.data.length) return null;
+      const raw = g.data[0].stock;
+      if (t > 0 && raw === last) return null;
+      last = raw;
+      const next = roundTo((Number(raw) || 0) + Number(qty), 4);
+      let q = sb.from("materials").update({ stock: next })
+        .eq("id", materialId).eq("business_id", businessId);
+      q = raw === null || raw === undefined ? q.is("stock", null) : q.eq("stock", raw);
+      const up = await q.select("id");
+      if (up.error) return null;
+      if (up.data && up.data.length) {
+        return { name: g.data[0].name || "", unit: g.data[0].unit || "", stock: next };
+      }
+    }
+    return null;
+  }
+
+  /* purchase = { id, date, method, amount, qty, materialId, materialName, materialUnit, note }
+     materialId boleh kosong (bahan di luar daftar): hanya jurnal.
+     Mengembalikan { ok, duplicate, errors, warnings, unitPrice, priceOk, stock } */
+  async function postPurchase(businessId, purchase, mapping) {
+    requireERP();
+    const p = purchase || {};
+    const accounts = ERP.getActiveAccounts();
+    const result = { ok: false, duplicate: false, errors: [], warnings: [], unitPrice: null, priceOk: null, stock: null };
+
+    const problems = purchaseProblems(mapping, accounts, p.method, businessId);
+    if (problems.length) { result.errors = problems; return result; }
+
+    const amount = Math.round(Number(p.amount));
+    if (!(amount > 0)) { result.errors = ["Total bayar harus lebih dari 0."]; return result; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(p.date || ""))) { result.errors = ["Tanggal tidak valid."]; return result; }
+    const hasMaterial = !!p.materialId;
+    const qty = Number(p.qty);
+    if (hasMaterial && !(qty > 0 && isFinite(qty))) { result.errors = ["Jumlah yang dibeli harus lebih dari 0."]; return result; }
+
+    const debit = purchaseAccount(accounts);
+    const creditId = mapping[p.method];
+    if (ERP.idEqual(debit.id, creditId)) { result.errors = ["Akun persediaan dan akun uang tidak boleh sama."]; return result; }
+
+    const qtyText = String(roundTo(qty, 4)).replace(".", ",");
+    const desc = ("Beli bahan: " + (hasMaterial ? p.materialName + " " + qtyText + " " + (p.materialUnit || "") : "bahan lain") +
+      (p.note ? " - " + p.note : "")).replace(/\s+/g, " ").trim().slice(0, 200);
+
+    await ERP.syncTransactions();
+    if (purchasePosted(p.id, businessId)) {
+      result.ok = true; result.duplicate = true; return result;
+    }
+
+    await ERP.createTransactionsRemote(businessId, [{
+      date: p.date,
+      invoice: p.id,
+      description: desc,
+      amount: amount,
+      debitAccountId: debit.id,
+      creditAccountId: creditId,
+      source: PURCHASE_SOURCE,
+      sourceId: p.id
+    }], { dedupeReferences: true });
+
+    result.ok = true;
+    if (!hasMaterial) return result;
+
+    // Jurnal sudah tersimpan. Kegagalan di bawah ini hanya jadi peringatan.
+    try {
+      const sb = requireClient();
+      result.unitPrice = unitPriceOf(amount, qty);
+      const up = await sb.from("materials").update({ price: result.unitPrice })
+        .eq("id", p.materialId).eq("business_id", businessId).select("id");
+      result.priceOk = !up.error && !!(up.data && up.data.length);
+      if (!result.priceOk) result.warnings.push("Harga " + p.materialName + " belum berhasil diperbarui. Cek di ERP, menu Bahan & Produk.");
+    } catch (e) {
+      result.priceOk = false;
+      result.warnings.push("Harga " + p.materialName + " belum berhasil diperbarui. Cek di ERP, menu Bahan & Produk.");
+    }
+
+    try {
+      result.stock = await addMaterialStock(businessId, p.materialId, qty);
+      if (!result.stock) result.warnings.push("Stok " + p.materialName + " belum berhasil diperbarui. Cek di ERP, menu Bahan & Produk.");
+    } catch (e) {
+      result.stock = null;
+      result.warnings.push("Stok " + p.materialName + " belum berhasil diperbarui. Cek di ERP, menu Bahan & Produk.");
+    }
+
+    return result;
+  }
+
+  // Pembelian bahan yang sudah tercatat lewat kasir, terbaru lebih dulu.
+  function purchaseEntries(businessId) {
+    requireERP();
+    return ERP.getActiveTransactions()
+      .filter(function (t) {
+        if (t.source !== PURCHASE_SOURCE) return false;
+        return businessId ? ERP.idEqual(t.businessId, businessId) : true;
+      })
+      .slice()
+      .sort(function (a, b) {
+        const byDate = String(b.date || "").localeCompare(String(a.date || ""));
+        if (byDate) return byDate;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      });
+  }
+
   return {
     METHODS: METHODS,
     MAP_KEY: MAP_KEY,
@@ -360,6 +551,14 @@ window.PosERP = (function () {
     isPosted: isPosted,
     postCash: postCash,
     cashPosted: cashPosted,
-    cashEntries: cashEntries
+    cashEntries: cashEntries,
+    PURCHASE_SOURCE: PURCHASE_SOURCE,
+    purchaseAccount: purchaseAccount,
+    purchaseProblems: purchaseProblems,
+    loadMaterials: loadMaterials,
+    unitPriceOf: unitPriceOf,
+    postPurchase: postPurchase,
+    purchasePosted: purchasePosted,
+    purchaseEntries: purchaseEntries
   };
 })();
