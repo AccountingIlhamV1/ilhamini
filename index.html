@@ -8,34 +8,135 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Catat.in">
 <style>
-:root{--n:#12305c;--b:#2f7de1;--bg:#f5f7fb;--l:#e1e7f0;--t:#1b2433;--m:#5d6b82;--r:#c0392b;--g:#1d8a52}
-*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;font:16px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--t);background:var(--bg);overflow-wrap:anywhere}
-button,input,select{font:inherit}h1{font-size:1.35rem;margin:.1em 0 .5em}h2{font-size:1.05rem;margin:0}
-.top{background:var(--n);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:6px 14px;position:sticky;top:0;z-index:6;min-height:54px}
-.logo{font-weight:700;font-size:1.2rem}.logo b{color:#7db4ff}
-.hb{background:none;border:1px solid #4a6fa5;color:#fff;border-radius:8px;width:44px;height:40px;font-size:1.3rem;cursor:pointer}
-.top nav{display:none;position:absolute;top:100%;right:8px;width:min(240px,calc(100vw - 16px));flex-direction:column;background:var(--n);padding:6px;border-radius:0 0 12px 12px;box-shadow:0 8px 20px #0004}.top nav.open{display:flex}
-.top a{color:#cfe0fb;text-decoration:none;padding:10px 12px;border-radius:8px;cursor:pointer}.top a.on{background:#25508f;color:#fff}
-main{max-width:1000px;margin:0 auto;padding:16px}.card{background:#fff;border:1px solid var(--l);border-radius:14px;padding:16px;margin-bottom:14px}
-.grid{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:14px}.grid .card{margin:0;padding:14px}.stat small{color:var(--m)}.stat div{font-size:clamp(1.05rem,4.6vw,1.45rem);font-weight:700;color:var(--n)}.stat.w{grid-column:1/-1}
+:root{
+  --navy:#0e2a4f;--navy2:#173a6a;--blue:#1f6fd6;--blue2:#1859b0;--tint:#e8f0fc;
+  --ink:#0d1b2e;--ink2:#3a4a61;--mute:#67768d;--line:#dbe3ee;--line2:#b8c4d6;
+  --bg:#f2f5fa;--card:#fff;--red:#b93a2e;--green:#1b7f4d;--amber:#8a6100;--amberbg:#fff8e6;
+  /* nama lama tetap dipakai oleh JS */
+  --n:var(--navy);--b:var(--blue);--l:var(--line);--t:var(--ink);--m:var(--mute);--r:var(--red);--g:var(--green);
+  --side:236px;--r1:12px;--r2:8px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:light;scroll-padding-top:70px}
+body{margin:0;font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--bg);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+h1{font-size:1.45rem;line-height:1.25;font-weight:700;letter-spacing:-.01em;margin:0 0 4px}
+h2{font-size:1rem;font-weight:700;margin:0 0 10px;letter-spacing:-.005em}
+a{color:var(--blue2)}
+p{margin:6px 0}
+
+/* ---------- bilah atas (HP) / sidebar (desktop) ---------- */
+.top{background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:sticky;top:0;z-index:6;min-height:56px}
+.logo{font-weight:800;font-size:1.25rem;letter-spacing:-.02em}.logo b{color:#8dbcff;font-weight:800}
+.hb{background:transparent;border:1px solid #3d5f90;color:#fff;border-radius:var(--r2);width:44px;height:40px;font-size:1.25rem;cursor:pointer}
+.hb:hover{background:var(--navy2)}
+.top nav{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;background:var(--navy);padding:6px 10px 12px;border-top:1px solid #23446f;box-shadow:0 14px 24px rgba(8,22,44,.35)}
+.top nav.open{display:flex}
+.top a{color:#c6d8f2;text-decoration:none;padding:12px 14px;border-radius:var(--r2);cursor:pointer;font-weight:500}
+.top a:hover{background:var(--navy2);color:#fff}
+.top a.on{background:var(--blue);color:#fff;font-weight:600}
+
+main{max-width:1120px;margin:0 auto;padding:18px 16px 28px}
+
+/* ---------- kartu ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r1);padding:18px;margin-bottom:14px}
+.card>h2:first-child,.card>.row.sp:first-child h2{margin-bottom:12px}
+.card>.row.sp{padding:9px 0;border-bottom:1px solid var(--line);margin:0}
+.card>.row.sp:last-of-type{border-bottom:0}
+.card>.row.sp:first-child{padding-top:0}
+.grid{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-bottom:14px}
+.grid .card{margin:0;padding:14px 16px}
+.stat small{color:var(--mute);font-size:.8rem;font-weight:500}
+.stat div{font-size:clamp(1.1rem,4.6vw,1.4rem);font-weight:700;color:var(--navy);letter-spacing:-.01em}
+.stat.w{grid-column:1/-1;background:var(--navy);border-color:var(--navy)}
+.stat.w small{color:#a9c4ea}.stat.w div{color:#fff;font-size:clamp(1.5rem,7vw,1.9rem)}
+.mut{color:var(--mute);font-size:.88rem}
+.ok{color:var(--green)}
+.err{color:var(--red);font-size:.88rem;margin:6px 0;min-height:1px}
+
+/* ---------- form ---------- */
+label{display:block;font-size:.84rem;font-weight:600;color:var(--ink2);margin:12px 0 5px}
+input,select,textarea{width:100%;min-height:44px;padding:9px 12px;border:1px solid var(--line2);border-radius:var(--r2);background:#fff;font-size:16px;transition:border-color .12s,box-shadow .12s}
+textarea{min-height:76px;resize:vertical}
+input::placeholder,textarea::placeholder{color:#8d9bb0}
+input:hover,select:hover,textarea:hover{border-color:#8fa3c0}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,111,214,.18)}
+input[readonly]{background:#eef2f8;color:var(--mute)}
+input[type=file]{padding:8px;min-height:44px;font-size:.9rem}
+button:focus-visible,summary:focus-visible,a:focus-visible,.pi:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* ---------- tombol ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:var(--r2);padding:0 18px;min-height:44px;cursor:pointer;font-weight:600;text-decoration:none;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--blue2);border-color:var(--blue2)}
+.btn.s{background:#fff;color:var(--navy);border-color:var(--line2)}
+.btn.s:hover{background:var(--tint);border-color:#8fa3c0}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.sm{padding:0 12px;min-height:34px;font-size:.86rem}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
+
+/* ---------- peringatan & label ---------- */
+.warn{background:var(--amberbg);border:1px solid #efd9a0;border-left:4px solid #d4a017;border-radius:var(--r2);padding:11px 14px;font-size:.88rem;margin-bottom:14px;color:#4d3a00}
+.warn b{color:#3b2c00}
+.tag{display:inline-block;background:#eef2f8;color:var(--ink2);border-radius:99px;padding:1px 9px;font-size:.74rem;font-weight:600;vertical-align:middle}
+details summary{cursor:pointer;padding:4px 0;color:var(--navy);font-weight:600}
+.flt{padding:12px 16px;margin:10px 0}
+
+/* ---------- kasir ---------- */
 .pos{display:grid;gap:14px;grid-template-columns:1fr}
-label{display:block;font-size:.9rem;color:var(--m);margin:10px 0 3px}input,select{width:100%;min-height:44px;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;background:#fff}
-input:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--b);outline-offset:1px}
-.btn{background:var(--b);color:#fff;border:0;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600}.btn.s{background:#fff;color:var(--n);border:1px solid #b9c5d8}.btn:disabled{opacity:.45;cursor:not-allowed}.sm{padding:4px 12px;min-height:36px;font-size:.88rem}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}.err{color:var(--r);font-size:.9rem;margin:6px 0;min-height:1px}.ok{color:var(--g)}.mut{color:var(--m);font-size:.9rem}
-.pl{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));max-height:42vh;overflow:auto;margin-top:10px}.pi{text-align:left;background:#fff;border:1px solid var(--l);border-radius:12px;padding:10px;cursor:pointer;min-height:76px}.pi:hover{border-color:var(--b)}
-.li{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;padding:12px 0;border-bottom:1px solid var(--l);cursor:pointer}.li:last-child{border:0}
-.ci{padding:10px 0;border-bottom:1px solid var(--l)}.ci1,.ci2{display:flex;justify-content:space-between;align-items:center;gap:8px}.ci2{margin:6px 0}.st{display:flex;gap:4px;align-items:center}.st .btn{width:40px;padding:0}.st input{width:56px;text-align:center;padding:8px 4px}
-details summary{cursor:pointer;padding:4px 0;color:var(--n);font-weight:600}.flt{padding:10px 16px;margin:10px 0}
-.tag{background:#fff3cd;color:#7a5b00;border-radius:6px;padding:2px 8px;font-size:.8rem;font-weight:600}.warn{background:#fff8e1;border:1px solid #f0d78a;border-radius:10px;padding:10px;font-size:.9rem;margin-bottom:12px}
-.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--l);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:4}.tot{font-size:1.4rem;font-weight:700;color:var(--n)}.bar .btn{min-width:120px}
-.sc{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{padding:8px 6px;border-bottom:1px solid var(--l);text-align:left;white-space:nowrap}th{color:var(--m)}
-.auth{max-width:420px;margin:5vh auto;padding:0 16px}.ov{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;padding:14px;z-index:9}.md{background:#fff;border-radius:14px;padding:18px;max-width:440px;width:100%;max-height:90vh;overflow:auto}
-input[readonly]{background:#eef2f8;color:var(--m)}.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--n);color:#fff;padding:10px 16px;border-radius:10px;z-index:20;max-width:90vw}.rcpt{font-family:ui-monospace,monospace;font-size:.85rem}.rcpt hr{border:0;border-top:1px dashed #888}
-@media(min-width:800px){.hb{display:none}.top{justify-content:flex-start;gap:24px}.top nav{display:flex;position:static;flex-direction:row;flex-wrap:wrap;width:auto;background:none;box-shadow:none;padding:0;flex:1}.top nav a:last-child{margin-left:auto}.pos{grid-template-columns:1.2fr 1fr}.grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}}@media(min-width:1024px){main{max-width:1180px}}
-.plogo{display:block;max-width:160px;max-height:96px;margin:6px 0 8px;padding:4px;border:1px solid var(--l);border-radius:8px;background:#fff}.rlogo{display:block;margin:0 auto 6px;max-width:120px;max-height:56px}
-.pwa{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.pwa>div:first-child{flex:1;min-width:180px}.pwa .row{flex-wrap:nowrap}
-@media print{body *{visibility:hidden}.rcpt,.rcpt *{visibility:visible}.rcpt{position:absolute;left:0;top:0;width:100%}.ov{background:none}}
+.pl{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));max-height:46vh;overflow:auto;margin-top:12px;padding:2px}
+.pi{text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;min-height:80px;font-weight:700;color:var(--blue2);line-height:1.35;transition:border-color .12s,background .12s}
+.pi b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}.pi br{display:none}
+.pi:hover{border-color:var(--blue);background:var(--tint)}
+.pi:active{background:#d9e7fb}
+.ci{padding:12px 0;border-bottom:1px solid var(--line)}.ci:last-of-type{border-bottom:0}
+.ci1,.ci2{display:flex;justify-content:space-between;align-items:center;gap:8px}.ci2{margin:8px 0}
+.st{display:flex;gap:4px;align-items:center}.st .btn{width:40px;padding:0}.st input{width:58px;text-align:center;padding:8px 4px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(14,42,79,.08);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:12px;z-index:4}
+.tot{font-size:1.45rem;font-weight:800;color:var(--navy);letter-spacing:-.01em;line-height:1.2}
+.bar .btn{min-width:140px;min-height:48px;font-size:1rem}
+
+/* ---------- daftar & tabel ---------- */
+.li{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;padding:12px 6px;margin:0 -6px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:6px}
+.li:hover{background:#f6f9fd}.li:last-child{border:0}
+.sc{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--mute);font-weight:600;font-size:.8rem;background:#f6f9fd}
+
+/* ---------- masuk, modal, toast, struk ---------- */
+.auth{max-width:420px;margin:6vh auto;padding:0 16px}
+.ov{position:fixed;inset:0;background:rgba(9,22,43,.55);display:flex;align-items:flex-end;justify-content:center;z-index:9}
+.md{background:#fff;border-radius:16px 16px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:92vh;overflow:auto;animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:var(--r2);z-index:20;max-width:90vw;font-size:.9rem;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.rcpt{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;background:#f8fafd;border:1px dashed var(--line2);border-radius:var(--r2);padding:14px}
+.rcpt hr{border:0;border-top:1px dashed #8d9bb0}
+.plogo{display:block;max-width:160px;max-height:96px;margin:6px 0 8px;padding:4px;border:1px solid var(--line);border-radius:var(--r2);background:#fff}
+.rlogo{display:block;margin:0 auto 6px;max-width:120px;max-height:56px}
+.pwa{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--tint);border-color:#c5d8f5}
+.pwa>div:first-child{flex:1;min-width:180px}.pwa .row{flex-wrap:nowrap}
+
+/* ---------- layar lebar: sidebar kiri ---------- */
+@media(min-width:900px){
+  body:has(.top){padding-left:var(--side)}
+  .top{position:fixed;left:0;top:0;bottom:0;width:var(--side);flex-direction:column;align-items:stretch;justify-content:flex-start;padding:22px 12px;gap:6px}
+  .logo{padding:2px 14px 20px;font-size:1.4rem}
+  .hb{display:none}
+  .top nav{display:flex;position:static;flex-direction:column;background:none;box-shadow:none;border:0;padding:0;flex:1;gap:2px}
+  .top a{padding:10px 14px}
+  .top a:last-child{margin-top:auto;color:#9db6da}
+  main{padding:26px 28px 40px}
+  .pos{grid-template-columns:1.3fr 1fr;align-items:start}
+  .pos>.card:last-child{position:sticky;top:18px}
+  .pl{max-height:62vh}
+  .grid{grid-template-columns:repeat(4,1fr)}.stat.w{grid-column:auto}
+  .bar{left:var(--side)}
+  .toast{left:calc(50% + var(--side)/2)}
+  .ov{align-items:center;padding:20px}.md{border-radius:16px;padding:22px}
+  .auth{margin-left:auto;margin-right:auto}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{body{padding:0}body *{visibility:hidden}.rcpt,.rcpt *{visibility:visible}.rcpt{position:absolute;left:0;top:0;width:100%;border:0;background:none}.ov{background:none}}
 </style></head><body><div id="app"></div><div id="ov"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="assets/auth.js"></script>
@@ -323,7 +424,7 @@ function kasPage(){if(!window.CashCore)return '<h1>Uang Masuk &amp; Keluar</h1><
   return `<div class="row sp"><h1>Uang Masuk &amp; Keluar</h1><a class="btn s" href="https://accountingilhamv1.github.io/Ilhamoke/journal.html">Lihat catatan di ERP</a></div>
 <p class="mut">Catat uang yang masuk atau keluar selain dari penjualan. Pilihannya otomatis, jadi tidak perlu mengisi akun. Stok barang tidak berubah.</p>
 <div class="card"><h2>Tulis cepat</h2><p class="mut" style="margin:4px 0 8px">Tulis seperti chat, misalnya “terima 500rb jasa servis”, “beli galon 20rb”, atau “tambah modal 2jt”.</p>
-<textarea id="ktext" rows="2" style="width:100%;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;font:inherit" placeholder="Tulis di sini…" oninput="kasLive()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();kasGo()}"></textarea>
+<textarea id="ktext" rows="2"  placeholder="Tulis di sini…" oninput="kasLive()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();kasGo()}"></textarea>
 <div class="row" style="margin-top:8px"><button class="btn" id="kgo" onclick="kasGo()">Simpan</button><span class="mut" style="align-self:center">Akun dipilih otomatis. Tekan Enter untuk simpan.</span></div><div id="kparse" style="margin-top:6px"></div><div class="err" id="kmsg"></div></div>
 <details class="card" id="kmanual"><summary><b>Isi sendiri</b> — kalau tulisannya tidak terbaca</summary>
 <p class="mut" style="margin:6px 0 0">Bagian ini hanya untuk keadaan darurat. Akun bisa dipilih sendiri di sini.</p>
