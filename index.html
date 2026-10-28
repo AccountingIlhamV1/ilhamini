@@ -350,6 +350,56 @@ th,td{border-bottom-color:#edf1f7}
 .chw i{background:#c3d6f3;border-radius:8px 8px 0 0}
 .tp .tr{background:#edf1f8}
 .ni{border-radius:var(--r2);border-color:var(--line)}
+
+/* =====================================================================
+   REVISI 2: transisi menu lebih halus + lebih berwarna (tetap lembut)
+   ===================================================================== */
+:root{--bg:#f1f5fc;--grad:linear-gradient(135deg,#2f62b5,#3f76cc);--ease:cubic-bezier(.22,.61,.36,1)}
+body{background-color:#fff;background-image:linear-gradient(180deg,#bcd4f7 0,#d9e7fb 240px,#eef4fd 520px,#fff 860px);background-repeat:no-repeat}
+
+/* --- menu geser: lebih pelan, latar meredup pelan-pelan juga --- */
+.top nav{transition:transform .42s var(--ease),visibility 0s .42s}
+.top nav.open{transition:transform .42s var(--ease),visibility 0s}
+.scrim{display:block;opacity:0;visibility:hidden;transition:opacity .42s ease,visibility 0s .42s}
+.top nav.open+.scrim{display:block;opacity:1;visibility:visible;transition:opacity .42s ease,visibility 0s}
+
+/* --- tombol garis tiga: biru berwarna --- */
+.hb{background:var(--grad);border-color:transparent;box-shadow:0 2px 8px rgba(45,95,180,.30);border-radius:12px;transition:box-shadow .2s,transform .15s}
+.hb:hover{background:linear-gradient(135deg,#2a58a5,#3a6fc2);box-shadow:0 4px 12px rgba(45,95,180,.36)}
+.hb:active{transform:scale(.96)}
+.hbi{background:#fff;box-shadow:0 -6px 0 #fff,0 6px 0 #fff}
+
+/* --- menu: item aktif berwarna --- */
+.top nav::before{color:var(--blue2)}
+.top a.on{background:var(--grad);color:#fff;box-shadow:0 3px 10px rgba(45,95,180,.25)}
+.top a:hover{background:#e6effc;color:var(--blue2)}
+.top a.on:hover{background:var(--grad);color:#fff}
+
+/* --- sentuhan warna di isi halaman --- */
+.card{border-color:#e3ebf7}
+.tag{background:#e3edfc;color:var(--blue2)}
+th{background:#e9f0fb;color:var(--blue2)}
+.tot{color:var(--blue2)}
+.btn{background:var(--grad);border-color:transparent}
+.btn:hover{background:linear-gradient(135deg,#2a58a5,#3a6fc2);border-color:transparent}
+.btn.s{background:#fff;border-color:#c9d7ee;color:var(--blue2)}
+.btn.s:hover{background:var(--tint);border-color:#a9c0e6}
+.seg{background:#e6eefb}
+.seg button.on{color:var(--blue2)}
+.mini>div:nth-child(odd){background:#f7faff}
+.mini>div:nth-child(even){background:#fff}
+.chw i{background:linear-gradient(180deg,#b7cff3,#cfdff6)}
+.chc.now .chw i{background:var(--grad)}
+.tp .tr i{background:var(--grad)}
+.pi{background:#fbfdff}
+.pi.in{background:#e6effc}
+.stat div{color:var(--blue2)}
+.stat.w div{color:#fff}
+.pwa{background:#e9f1fd;border-color:#cfdff6}
+.li:hover{background:#eef4fd}
+a{color:var(--blue2)}
+.top a{color:var(--ink2)}
+.top a.on{color:#fff}
 </style></head><body><div id="app"></div><div id="ov"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="assets/auth.js"></script>

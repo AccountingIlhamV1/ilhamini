@@ -12,7 +12,7 @@
    Penjualan tetap harus tersambung ke ERP untuk disimpan.
 ===================================================== */
 
-const VERSION = "2026-10-28.1";
+const VERSION = "2026-10-28.3";
 const CACHE = "catatin-pos-" + VERSION;
 
 const SW_URL = new URL(self.location.href);
