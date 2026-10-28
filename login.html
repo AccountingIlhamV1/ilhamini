@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Masuk — Kasir Catat.in</title>
 <meta name="description" content="Masuk ke Kasir Catat.in dengan akun Ilham ERP.">
-<meta name="theme-color" content="#12305c">
+<meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -13,36 +13,36 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Catat.in">
 <style>
-:root{--n:#12305c;--b:#2f7de1;--bg:#f5f7fb;--l:#e1e7f0;--t:#1b2433;--m:#5d6b82;--r:#c0392b;--g:#1d8a52}
+:root{--n:#1f3a62;--b:#3b76d6;--bg:#f6f8fc;--l:#e7ecf4;--t:#1b2a41;--m:#6a7a92;--r:#c2493d;--g:#1f7f55}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;font:16px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;color:var(--t);background:var(--bg);overflow-x:hidden}
 
 /* Latar: tiga cahaya biru yang bergerak pelan */
 .bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
 .bg i{position:absolute;border-radius:50%;will-change:transform}
-.bg i:nth-child(1){width:70vmax;height:70vmax;left:-25vmax;top:-30vmax;background:radial-gradient(circle,rgba(47,125,225,.28),rgba(47,125,225,0) 65%);animation:drift1 22s ease-in-out infinite alternate}
-.bg i:nth-child(2){width:60vmax;height:60vmax;right:-22vmax;bottom:-26vmax;background:radial-gradient(circle,rgba(18,48,92,.26),rgba(18,48,92,0) 65%);animation:drift2 26s ease-in-out infinite alternate}
-.bg i:nth-child(3){width:38vmax;height:38vmax;right:8vmax;top:-10vmax;background:radial-gradient(circle,rgba(47,125,225,.16),rgba(47,125,225,0) 65%);animation:drift3 18s ease-in-out infinite alternate}
+.bg i:nth-child(1){width:70vmax;height:70vmax;left:-25vmax;top:-30vmax;background:radial-gradient(circle,rgba(59,118,214,.18),rgba(59,118,214,0) 65%);animation:drift1 22s ease-in-out infinite alternate}
+.bg i:nth-child(2){width:60vmax;height:60vmax;right:-22vmax;bottom:-26vmax;background:radial-gradient(circle,rgba(31,58,98,.12),rgba(31,58,98,0) 65%);animation:drift2 26s ease-in-out infinite alternate}
+.bg i:nth-child(3){width:38vmax;height:38vmax;right:8vmax;top:-10vmax;background:radial-gradient(circle,rgba(59,118,214,.10),rgba(59,118,214,0) 65%);animation:drift3 18s ease-in-out infinite alternate}
 @keyframes drift1{to{transform:translate(14vmax,10vmax) scale(1.08)}}
 @keyframes drift2{to{transform:translate(-12vmax,-8vmax) scale(1.1)}}
 @keyframes drift3{to{transform:translate(-10vmax,12vmax) scale(.9)}}
 
 /* Kartu: satu gerakan masuk saat halaman dibuka */
-.card{position:relative;z-index:1;width:100%;max-width:420px;background:#fff;border:1px solid var(--l);border-radius:14px;padding:22px;box-shadow:0 12px 34px rgba(18,48,92,.10);animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+.card{position:relative;z-index:1;width:100%;max-width:420px;background:#fff;border:1px solid var(--l);border-radius:20px;padding:28px 24px;box-shadow:0 1px 2px rgba(31,58,98,.04),0 16px 44px rgba(31,58,98,.10);animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
 @keyframes rise{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
 .card.shake{animation:shake .45s cubic-bezier(.36,.07,.19,.97)}
 @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
 
-.logo{font-size:1.8rem;font-weight:700;color:var(--n);margin-bottom:4px}.logo b{color:var(--b)}
-h1{font-size:1.35rem;margin:.2em 0 .4em}label{display:block;font-size:.9rem;color:var(--m);margin:10px 0 3px;transition:color .2s}
+.logo{font-size:1.8rem;font-weight:750;letter-spacing:-.02em;color:var(--n);margin-bottom:4px}.logo b{color:var(--b)}
+h1{font-size:1.35rem;font-weight:650;letter-spacing:-.015em;color:var(--n);margin:.2em 0 .4em}label{display:block;font-size:.88rem;font-weight:500;color:var(--m);margin:12px 0 5px;transition:color .2s}
 .field:focus-within label{color:var(--b)}
-input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #b9c5d8;border-radius:10px;background:#fff;font:inherit;transition:border-color .2s,box-shadow .2s}
-input:focus{outline:none;border-color:var(--b);box-shadow:0 0 0 4px rgba(47,125,225,.18)}
-input:focus-visible{outline:2px solid var(--b);outline-offset:1px;box-shadow:0 0 0 4px rgba(47,125,225,.18)}
+input{width:100%;min-height:44px;padding:9px 12px;border:1px solid #d5ddea;border-radius:12px;background:#fcfdff;font:inherit;transition:border-color .2s,box-shadow .2s}
+input:focus{outline:none;border-color:var(--b);box-shadow:0 0 0 4px rgba(59,118,214,.14)}
+input:focus-visible{outline:2px solid var(--b);outline-offset:1px;box-shadow:0 0 0 4px rgba(59,118,214,.14)}
 
-.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--b);color:#fff;border:0;border-radius:10px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600;text-decoration:none;text-align:center;transition:transform .15s,background .2s,box-shadow .2s}
-.btn:hover{background:#2570cf;box-shadow:0 6px 16px rgba(47,125,225,.32)}
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--b);color:#fff;border:0;border-radius:12px;padding:10px 18px;min-height:44px;cursor:pointer;font-weight:600;text-decoration:none;text-align:center;transition:transform .15s,background .2s,box-shadow .2s}
+.btn:hover{background:#2d5fb4;box-shadow:0 6px 16px rgba(45,95,180,.26)}
 .btn:active{transform:scale(.97)}
-.btn.s{background:#fff;color:var(--n);border:1px solid #b9c5d8}.btn:disabled{opacity:.7;cursor:wait;transform:none;box-shadow:none}
+.btn.s{background:#fff;color:var(--n);border:1px solid #d5ddea}.btn:disabled{opacity:.7;cursor:wait;transform:none;box-shadow:none}
 /* Spinner muncul saat tombol diproses */
 .btn:disabled::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
